@@ -210,6 +210,7 @@ a:hover {
     transition: color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
     border-left: 2px solid transparent;
     line-height: 1.4;
+    white-space: nowrap;
 }
 
 .sidebar__link:hover {
