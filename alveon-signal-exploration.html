@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Signal Color Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --font-display: 'Outfit', sans-serif; --font-mono: 'JetBrains Mono', monospace; }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: var(--font-display); background: #fff; color: #1A1A1A; -webkit-font-smoothing: antialiased; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid #f0f0f0; padding: 16px 48px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-wordmark { font-weight: 800; font-size: 14px; letter-spacing: 0.1em; }
+  .nav-doc { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #999; }
+
+  section { padding: 100px 48px 80px; max-width: 1100px; margin: 0 auto; }
+  section:first-of-type { padding-top: 120px; }
+  .full { max-width: 100%; }
+  .full .inner { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: #999; margin-bottom: 24px; }
+  .title { font-weight: 800; font-size: clamp(26px, 3.5vw, 38px); line-height: 1.1; margin-bottom: 12px; }
+  .subtitle { font-weight: 400; font-size: 15px; line-height: 1.65; color: #666; max-width: 700px; margin-bottom: 48px; }
+
+  /* ── DIRECTION CARDS ── */
+  .directions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .dir-card {
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    border: 2px solid transparent;
+    position: relative;
+  }
+  .dir-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); }
+  .dir-card.selected { border-color: #1A1A1A; transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+  .dir-card.selected::after {
+    content: '✓'; position: absolute; top: 14px; right: 14px;
+    width: 24px; height: 24px; background: #1A1A1A; color: #fff;
+    border-radius: 50%; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; z-index: 2;
+  }
+  .dir-swatch {
+    height: 100px;
+    display: flex; align-items: center; padding: 0 24px;
+    position: relative;
+  }
+  .dir-swatch-wordmark {
+    font-weight: 800; font-size: 22px; letter-spacing: 0.08em;
+  }
+  .dir-swatch-tag {
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;
+    position: absolute; bottom: 12px; left: 24px;
+  }
+  .dir-info { padding: 20px 24px; background: #fff; }
+  .dir-name { font-weight: 700; font-size: 16px; margin-bottom: 2px; }
+  .dir-hex { font-family: var(--font-mono); font-size: 11px; color: #999; margin-bottom: 8px; }
+  .dir-desc { font-size: 13px; line-height: 1.55; color: #666; margin-bottom: 12px; }
+  .dir-refs {
+    font-family: var(--font-mono); font-size: 9px; color: #bbb;
+    letter-spacing: 0.03em; line-height: 1.5;
+    padding-top: 10px; border-top: 1px solid #f0f0f0;
+  }
+  .dir-refs strong { color: #999; font-weight: 500; }
+
+  /* ── PREVIEW AREA ── */
+  .preview-container {
+    margin-top: 48px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #eee;
+  }
+  .preview-nav {
+    display: flex; background: #fafafa; border-bottom: 1px solid #f0f0f0;
+  }
+  .preview-nav-item {
+    padding: 14px 24px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #bbb;
+    cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .preview-nav-item:hover { color: #666; }
+  .preview-nav-item.active { color: #1A1A1A; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* ── PANE: WEBSITE HERO ── */
+  .p-hero { padding: 64px 48px; min-height: 380px; display: flex; flex-direction: column; justify-content: center; }
+  .p-hero-label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 24px; }
+  .p-hero-headline { font-weight: 800; font-size: clamp(30px, 4vw, 44px); line-height: 1.08; color: #fff; margin-bottom: 16px; max-width: 600px; }
+  .p-hero-body { font-size: 15px; line-height: 1.6; max-width: 520px; margin-bottom: 32px; }
+  .p-hero-cta { display: inline-block; padding: 10px 28px; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.06em; border: none; cursor: default; border-radius: 0; }
+  .p-hero-footer { margin-top: auto; padding-top: 40px; display: flex; align-items: center; gap: 20px; }
+  .p-hero-wm { font-weight: 800; font-size: 12px; letter-spacing: 0.1em; }
+  .p-hero-meta { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em; }
+
+  /* ── PANE: DATA CARD ── */
+  .p-data { padding: 48px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .p-data-card { border-radius: 10px; padding: 32px 24px; min-height: 220px; display: flex; flex-direction: column; }
+  .p-data-label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 16px; }
+  .p-data-number { font-weight: 800; font-size: 42px; line-height: 1; margin-bottom: 8px; }
+  .p-data-unit { font-family: var(--font-mono); font-size: 11px; margin-bottom: 4px; }
+  .p-data-desc { font-size: 12px; line-height: 1.5; margin-top: auto; }
+
+  /* ── PANE: TYPOGRAPHY ── */
+  .p-type { padding: 64px 48px; }
+  .p-type-row { display: grid; grid-template-columns: 120px 1fr; gap: 32px; align-items: baseline; padding: 24px 0; }
+  .p-type-role { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .p-type-sample-xl { font-weight: 800; font-size: 36px; line-height: 1.1; }
+  .p-type-sample-lg { font-weight: 700; font-size: 22px; line-height: 1.2; }
+  .p-type-sample-md { font-size: 15px; line-height: 1.6; }
+  .p-type-sample-sm { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; }
+  .p-type-sample-label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+
+  /* ── PANE: PRODUCT ── */
+  .p-product { display: grid; grid-template-columns: 1fr 1fr; min-height: 380px; }
+  .p-prod-left { padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+  .p-prod-wm { font-weight: 800; font-size: 14px; letter-spacing: 0.12em; margin-bottom: 16px; }
+  .p-prod-label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+  .p-prod-id { font-family: var(--font-mono); font-size: 11px; margin-bottom: 4px; }
+  .p-prod-size { font-family: var(--font-mono); font-size: 11px; }
+  .p-prod-bar { height: 2px; margin-top: 24px; }
+  .p-prod-right { display: flex; align-items: center; justify-content: center; padding: 48px; }
+  .p-prod-boot { font-weight: 800; font-size: 64px; letter-spacing: 0.02em; opacity: 0.1; }
+
+  /* ── PANE: BUSINESS CARD ── */
+  .p-bcard { display: grid; grid-template-columns: 1fr 1fr; min-height: 300px; }
+  .p-bcard-front, .p-bcard-back { padding: 40px; display: flex; flex-direction: column; justify-content: space-between; }
+  .p-bc-wm { font-weight: 800; font-size: 16px; letter-spacing: 0.1em; }
+  .p-bc-name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+  .p-bc-role { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; }
+  .p-bc-contact { font-family: var(--font-mono); font-size: 10px; line-height: 1.8; }
+  .p-bc-line { height: 2px; width: 40px; }
+
+  /* ── ARGUMENT SECTION ── */
+  .argument-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+  }
+  .argument-card {
+    padding: 28px;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+    background: #fff;
+  }
+  .argument-for { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+  .argument-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #1A1A1A; }
+  .argument-body { font-size: 13px; line-height: 1.55; color: #666; }
+  .argument-against { margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+  .argument-against-label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.08em; color: #ccc; text-transform: uppercase; margin-bottom: 6px; }
+  .argument-against-text { font-size: 12px; line-height: 1.5; color: #999; }
+
+  @media (max-width: 900px) {
+    section { padding: 80px 24px 60px; }
+    .directions { grid-template-columns: 1fr 1fr; }
+    .p-data, .p-product, .p-bcard { grid-template-columns: 1fr; }
+    .p-type-row { grid-template-columns: 1fr; gap: 8px; }
+    .argument-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .directions { grid-template-columns: 1fr; }
+    .full .inner { padding: 0 24px; }
+    nav { padding: 12px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">SIGNAL COLOR EXPLORATION</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTRO                                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">The Question</div>
+  <h1 class="title">Does it have to be orange?</h1>
+  <p class="subtitle">Orange was chosen as a signal color because it carries associations of safety markings, engineering, and high-visibility precision. But Alveon's identity is about the system, not the hue. Let's test six directions and see which color best becomes the brand.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- DIRECTIONS                                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="padding-top: 0;">
+  <div class="label">Six Directions</div>
+
+  <div class="directions" id="dirGrid"></div>
+
+  <!-- PREVIEW -->
+  <div class="preview-container" id="previewContainer">
+    <div class="preview-nav" id="previewNav">
+      <div class="preview-nav-item active" data-pane="hero">Website Hero</div>
+      <div class="preview-nav-item" data-pane="data">Data Cards</div>
+      <div class="preview-nav-item" data-pane="type">Typography</div>
+      <div class="preview-nav-item" data-pane="product">Product Label</div>
+      <div class="preview-nav-item" data-pane="bcard">Business Card</div>
+    </div>
+
+    <!-- HERO -->
+    <div class="pane active" data-pane="hero">
+      <div class="p-hero" id="pHero">
+        <div class="p-hero-label" id="phLabel">ENGINEERED FOR ONE</div>
+        <div class="p-hero-headline">The first made-to-measure football boot.</div>
+        <div class="p-hero-body" id="phBody">We use 3D scanning, biomechanical research, and digital manufacturing to construct a shoe that fits exactly one player's foot.</div>
+        <div class="p-hero-cta" id="phCta">LEARN MORE</div>
+        <div class="p-hero-footer">
+          <div class="p-hero-wm" id="phWm">ALVEON</div>
+          <div class="p-hero-meta" id="phMeta">HAMBURG / EST. 2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA -->
+    <div class="pane" data-pane="data">
+      <div class="p-data" id="pData">
+        <div class="p-data-card" id="pdCard1">
+          <div class="p-data-label" id="pdLabel1">FOOT LENGTH</div>
+          <div class="p-data-number" id="pdNum1">271.3</div>
+          <div class="p-data-unit" id="pdUnit1">mm</div>
+          <div class="p-data-desc" id="pdDesc1">Right foot, measured under load. Dynamic scan at 240 Hz.</div>
+        </div>
+        <div class="p-data-card" id="pdCard2">
+          <div class="p-data-label" id="pdLabel2">ARCH HEIGHT</div>
+          <div class="p-data-number" id="pdNum2">32.4</div>
+          <div class="p-data-unit" id="pdUnit2">mm</div>
+          <div class="p-data-desc" id="pdDesc2">Medial arch under standing load. Key parameter for footbed.</div>
+        </div>
+        <div class="p-data-card" id="pdCard3">
+          <div class="p-data-label" id="pdLabel3">PRONATION</div>
+          <div class="p-data-number" id="pdNum3">4.2°</div>
+          <div class="p-data-unit" id="pdUnit3">inward</div>
+          <div class="p-data-desc" id="pdDesc3">Mild overpronation. Corrected through zone-specific sole geometry.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TYPOGRAPHY -->
+    <div class="pane" data-pane="type">
+      <div class="p-type" id="pType">
+        <div class="p-type-row" style="border-bottom: 1px solid #f0f0f0;">
+          <div class="p-type-role" id="ptRole1">Label</div>
+          <div class="p-type-sample-label" id="ptSample1">ENGINEERED FOR ONE</div>
+        </div>
+        <div class="p-type-row" style="border-bottom: 1px solid #f0f0f0;">
+          <div class="p-type-role" id="ptRole2">Headline</div>
+          <div class="p-type-sample-xl" id="ptSample2">Every foot is different.</div>
+        </div>
+        <div class="p-type-row" style="border-bottom: 1px solid #f0f0f0;">
+          <div class="p-type-role" id="ptRole3">Subhead</div>
+          <div class="p-type-sample-lg" id="ptSample3">The football boot is broken.</div>
+        </div>
+        <div class="p-type-row" style="border-bottom: 1px solid #f0f0f0;">
+          <div class="p-type-role" id="ptRole4">Body</div>
+          <div class="p-type-sample-md" id="ptSample4">Athletes push their bodies to the limit. They train in the dark, play through pain, and dedicate years of their lives to a sport that demands everything.</div>
+        </div>
+        <div class="p-type-row">
+          <div class="p-type-role" id="ptRole5">Metadata</div>
+          <div class="p-type-sample-sm" id="ptSample5">AV-R-2026-0142 / HAMBURG / 271.3mm / RIGHT FOOT</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT -->
+    <div class="pane" data-pane="product">
+      <div class="p-product" id="pProduct">
+        <div class="p-prod-left" id="ppLeft">
+          <div class="p-prod-wm" id="ppWm">ALVEON</div>
+          <div class="p-prod-label" id="ppLabel">MADE TO MEASURE</div>
+          <div class="p-prod-id" id="ppId">AV-R-2026-0142</div>
+          <div class="p-prod-size" id="ppSize">SIZE: INDIVIDUAL</div>
+          <div class="p-prod-bar" id="ppBar"></div>
+        </div>
+        <div class="p-prod-right" id="ppRight">
+          <div class="p-prod-boot" id="ppBoot">A</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSINESS CARD -->
+    <div class="pane" data-pane="bcard">
+      <div class="p-bcard" id="pBcard">
+        <div class="p-bcard-front" id="pbFront">
+          <div>
+            <div class="p-bc-wm" id="pbWm">ALVEON</div>
+          </div>
+          <div>
+            <div class="p-bc-line" id="pbLine" style="margin-bottom: 16px;"></div>
+            <div class="p-bc-name" id="pbName">Jurgen Beltz</div>
+            <div class="p-bc-role" id="pbRole">CO-FOUNDER / CEO</div>
+          </div>
+        </div>
+        <div class="p-bcard-back" id="pbBack">
+          <div class="p-bc-contact" id="pbContact">
+            jurgen@alveon.com<br>
+            +49 40 000 0000<br>
+            alveon.com
+          </div>
+          <div>
+            <div style="font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em;" id="pbTag">ENGINEERED FOR ONE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- ARGUMENTS                                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid #f0f0f0; padding-bottom: 120px;">
+  <div class="label">Arguments</div>
+  <h2 class="title" id="argTitle">Why this color works. And where it doesn't.</h2>
+  <p class="subtitle" id="argSubtitle">Every signal color carries associations. The right one should feel inevitable for Alveon, not borrowed.</p>
+
+  <div class="argument-grid" id="argGrid"></div>
+</section>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DIRECTIONS DATA
+// ══════════════════════════════════════════════════════
+const directions = [
+  {
+    name: 'Flare Orange',
+    hex: '#FF4F00',
+    dark: '#201C16',
+    greys: { mid: '#6E655A', light: '#A29888', pale: '#D1C9BD', nearWhite: '#F7F5F0' },
+    desc: 'The current frontrunner. Red-shifted orange with urgency and warmth. Safety marking energy. Engineering heritage.',
+    refs: 'McLaren F1, Hermès, safety signage, KTM, construction equipment',
+    temp: 'Red-warm',
+    swatchBg: '#000',
+    swatchWordmark: '#fff',
+    swatchTag: null, // uses hex
+    arguments: [
+      { title: 'Engineering DNA', body: 'Orange is the universal language of warning, measurement, and construction. It says "pay attention here" without saying "danger." Perfect for a precision brand.' },
+      { title: 'Instant recognition', body: 'No other football brand owns orange as a signal. Nike owns Volt. adidas has three stripes. Orange in a monochrome system is immediately Alveon.' },
+      { title: 'Works at every scale', body: 'From a 9px label to a building-sized installation. Orange is legible, warm, and energetic at all sizes. The red shift adds confidence over pure orange.' },
+    ],
+    counterArgs: [
+      { text: 'Closest to the existing direction. Could feel like we didn\'t challenge hard enough.' },
+      { text: 'Orange is used by Hermes, Strava, EasyJet. Associations range from luxury to budget.' },
+      { text: 'Needs discipline. Without the 10% territorial rule, it becomes generic activewear.' },
+    ]
+  },
+  {
+    name: 'Scan Blue',
+    hex: '#0066FF',
+    dark: '#1A1C20',
+    greys: { mid: '#60656E', light: '#9098A2', pale: '#C3C9D1', nearWhite: '#F2F4F7' },
+    desc: 'Medical imaging. Digital precision. The color of the scan itself. Cold, technical, trustworthy.',
+    refs: 'Garmin, IBM, medical devices, MRI displays, Dassault Systèmes',
+    temp: 'Cool-technical',
+    swatchBg: '#0a0c10',
+    swatchWordmark: '#fff',
+    swatchTag: null,
+    arguments: [
+      { title: 'Technology first', body: 'Blue is the default color of trust, precision, and data. It reads as "this is science, not marketing." For a brand built on research, that\'s a strong signal.' },
+      { title: 'Scanning aesthetic', body: 'The 3D scan itself emits blue light. Using scan blue as the signal color creates a direct visual link between the brand and its core technology.' },
+      { title: 'Differentiation in football', body: 'No football boot brand uses blue as a primary brand signal. The space is dominated by swooshes, stripes, and neon. Blue would be unexpected.' },
+    ],
+    counterArgs: [
+      { text: 'Blue is the most common corporate color worldwide. Risk of feeling generic or like a SaaS company.' },
+      { text: 'Cold. Alveon talks about athletes, bodies, careers. Blue lacks the physical warmth the brand needs.' },
+      { text: 'Every medical and tech startup defaults to blue. It says "safe choice" more than "bold system."' },
+    ]
+  },
+  {
+    name: 'Laser Green',
+    hex: '#00E05A',
+    dark: '#161E1A',
+    greys: { mid: '#5A6E62', light: '#88A296', pale: '#BDD1C5', nearWhite: '#F0F7F3' },
+    desc: 'Measurement precision. The laser line on the scan bed. Alive, electric, forward-looking.',
+    refs: 'Spotify, Razer, Kawasaki, LIDAR systems, laser alignment tools',
+    temp: 'Cool-electric',
+    swatchBg: '#0a0f0c',
+    swatchWordmark: '#fff',
+    swatchTag: null,
+    arguments: [
+      { title: 'Laser precision', body: 'Green lasers are used in alignment, measurement, and scanning. The literal tool of Alveon\'s technology is green light. That\'s a compelling origin story for a brand color.' },
+      { title: 'The pitch connection', body: 'Football is played on green. There\'s an inherent but subtle connection between the signal color and the sport. Not literal, not a grass print. Just a resonance.' },
+      { title: 'Energy without aggression', body: 'Green reads as alive, growing, moving forward. It has the energy of neon without the aggression of red or the coldness of blue.' },
+    ],
+    counterArgs: [
+      { text: 'Green on a monochrome system can feel like a gaming brand (Razer, Xbox) or a sustainability brand. Both are wrong for Alveon.' },
+      { text: 'Spotify owns this exact green in the digital space. Hard to escape that association.' },
+      { text: 'The pitch connection could be read as too on-the-nose for a football brand trying to be taken seriously as engineering.' },
+    ]
+  },
+  {
+    name: 'Signal Red',
+    hex: '#E8233A',
+    dark: '#1E1818',
+    greys: { mid: '#6E605A', light: '#A29088', pale: '#D1C5BD', nearWhite: '#F7F4F2' },
+    desc: 'Pure urgency. The problem is real. The stakes are high. Red demands attention without asking for permission.',
+    refs: 'Leica, Supreme, Ferrari, emergency systems, surgical instruments',
+    temp: 'Warm-aggressive',
+    swatchBg: '#0f0808',
+    swatchWordmark: '#fff',
+    swatchTag: null,
+    arguments: [
+      { title: 'Highest signal strength', body: 'Red is the most attention-grabbing color in any system. If Alveon\'s thesis is "the football boot is broken," red is the alarm that says it.' },
+      { title: 'Leica parallel', body: 'Leica uses a red dot in a monochrome system. Precision instrument, no decoration, one signal. That\'s almost exactly Alveon\'s approach.' },
+      { title: 'Premium and urgent', body: 'Red works across the entire spectrum from emergency to luxury. Ferrari to Supreme to surgical steel. It adds weight and seriousness.' },
+    ],
+    counterArgs: [
+      { text: 'Red in football = error, foul, red card. The association is overwhelmingly negative in this sport.' },
+      { text: 'Red is aggressive. Alveon\'s voice is "confident but never arrogant." Red might push too hard.' },
+      { text: 'Many brands already own red: Nike ACG, PUMA, New Balance. It\'s crowded territory.' },
+    ]
+  },
+  {
+    name: 'Volt Yellow',
+    hex: '#CCFF00',
+    dark: '#1C1E16',
+    greys: { mid: '#686E5A', light: '#9EA28A', pale: '#CFD1BD', nearWhite: '#F5F7F0' },
+    desc: 'Maximum visibility. Hi-vis, electric, impossible to ignore. The color screams "look here" from any distance.',
+    refs: 'Nike Volt, Post-it, safety vests, tennis balls, track markings',
+    temp: 'Electric-cool',
+    swatchBg: '#0c0e08',
+    swatchWordmark: '#fff',
+    swatchTag: null,
+    arguments: [
+      { title: 'Pure visibility', body: 'Yellow-green is the highest visibility color in daylight. If the 10% territorial rule creates scarcity, that 10% will be impossible to miss.' },
+      { title: 'Performance energy', body: 'Volt/neon yellow is coded as athletic, fast, electric. It\'s the color of performance without being the color of any single sport.' },
+      { title: 'Technical, not decorative', body: 'Hi-vis yellow is a functional color. It exists for a reason. Like Alveon, it earns its place through purpose, not aesthetics.' },
+    ],
+    counterArgs: [
+      { text: 'Nike owns Volt. Literally trademarked. Alveon would always be compared to Nike\'s highlighter energy.' },
+      { text: 'Neon yellow is coded as "loud." Alveon\'s voice is precise and restrained. The color contradicts the tone.' },
+      { text: 'On white backgrounds, yellow text is nearly invisible. Severe accessibility constraint on light mode.' },
+    ]
+  },
+  {
+    name: 'No Color',
+    hex: '#FFFFFF',
+    dark: '#1A1A1A',
+    greys: { mid: '#666666', light: '#999999', pale: '#CCCCCC', nearWhite: '#F5F5F5' },
+    desc: 'Pure monochrome. Black, white, grey. No chromatic signal at all. The product is the only color.',
+    refs: 'Apple (early), Comme des Garçons, Balenciaga, Braun, Bauhaus',
+    temp: 'Neutral',
+    swatchBg: '#000',
+    swatchWordmark: '#fff',
+    swatchTag: '#fff',
+    arguments: [
+      { title: 'Radical reduction', body: 'If every brand picks a color, picking no color is the strongest statement. It says: we don\'t need decoration. The product speaks.' },
+      { title: 'Product becomes color', body: 'When the boot is photographed, its material and structure become the only color in the frame. The knitting pattern, the 3D-print texture. That\'s the real visual identity.' },
+      { title: 'Maximum flexibility', body: 'No signal color means no color conflicts, no accessibility issues, no Pantone matching headaches. Pure black and white works everywhere, always.' },
+    ],
+    counterArgs: [
+      { text: 'Without a signal color, Alveon loses its most distinctive brand element. Everything looks like a template.' },
+      { text: 'Labels, data highlights, active states all need a color to function. Pure monochrome creates UI problems.' },
+      { text: 'In a market of bold brands, being colorless risks being invisible. Restraint becomes absence.' },
+    ]
+  },
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let selected = 0;
+
+// ══════════════════════════════════════════════════════
+// RENDER GRID
+// ══════════════════════════════════════════════════════
+function renderGrid() {
+  const grid = document.getElementById('dirGrid');
+  grid.innerHTML = directions.map((d, i) => {
+    const tagColor = d.swatchTag || d.hex;
+    const isNoColor = i === 5;
+    return `
+      <div class="dir-card ${i === selected ? 'selected' : ''}" data-idx="${i}">
+        <div class="dir-swatch" style="background: ${d.swatchBg};">
+          <div class="dir-swatch-wordmark" style="color: ${d.swatchWordmark};">ALVEON</div>
+          <div class="dir-swatch-tag" style="color: ${tagColor};">${isNoColor ? 'ENGINEERED FOR ONE' : 'ENGINEERED FOR ONE'}</div>
+        </div>
+        <div class="dir-info">
+          <div class="dir-name">${d.name}</div>
+          <div class="dir-hex">${isNoColor ? 'Pure monochrome' : d.hex + ' / ' + d.temp}</div>
+          <div class="dir-desc">${d.desc}</div>
+          <div class="dir-refs"><strong>References:</strong> ${d.refs}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.dir-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selected = parseInt(card.dataset.idx);
+      renderGrid();
+      updatePreview();
+      updateArguments();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// UPDATE PREVIEWS
+// ══════════════════════════════════════════════════════
+function updatePreview() {
+  const d = directions[selected];
+  const c = d.hex;
+  const dk = d.dark;
+  const mid = d.greys.mid;
+  const light = d.greys.light;
+  const isNoColor = selected === 5;
+  const accentForWhiteBg = isNoColor ? '#1A1A1A' : c;
+  const labelOnDark = isNoColor ? 'rgba(255,255,255,0.4)' : c;
+
+  // Nav indicator
+  document.querySelectorAll('.preview-nav-item.active').forEach(n => {
+    n.style.borderBottomColor = accentForWhiteBg;
+  });
+
+  // ── HERO ──
+  const hero = document.getElementById('pHero');
+  hero.style.background = dk;
+  document.getElementById('phLabel').style.color = labelOnDark;
+  document.getElementById('phBody').style.color = 'rgba(255,255,255,0.45)';
+  const cta = document.getElementById('phCta');
+  cta.style.background = isNoColor ? '#fff' : c;
+  cta.style.color = isNoColor ? '#000' : '#fff';
+  document.getElementById('phWm').style.color = labelOnDark;
+  document.getElementById('phMeta').style.color = 'rgba(255,255,255,0.2)';
+
+  // ── DATA ──
+  const dataContainer = document.getElementById('pData');
+  dataContainer.style.background = '#fff';
+  for (let i = 1; i <= 3; i++) {
+    document.getElementById(`pdCard${i}`).style.background = d.greys.nearWhite || '#F5F5F5';
+    document.getElementById(`pdLabel${i}`).style.color = accentForWhiteBg;
+    document.getElementById(`pdNum${i}`).style.color = dk;
+    document.getElementById(`pdUnit${i}`).style.color = mid;
+    document.getElementById(`pdDesc${i}`).style.color = light;
+  }
+
+  // ── TYPE ──
+  const type = document.getElementById('pType');
+  type.style.background = '#fff';
+  document.getElementById('ptRole1').style.color = light;
+  document.getElementById('ptSample1').style.color = accentForWhiteBg;
+  document.getElementById('ptRole2').style.color = light;
+  document.getElementById('ptSample2').style.color = dk;
+  document.getElementById('ptRole3').style.color = light;
+  document.getElementById('ptSample3').style.color = dk;
+  document.getElementById('ptRole4').style.color = light;
+  document.getElementById('ptSample4').style.color = mid;
+  document.getElementById('ptRole5').style.color = light;
+  document.getElementById('ptSample5').style.color = light;
+
+  // ── PRODUCT ──
+  const prodL = document.getElementById('ppLeft');
+  prodL.style.background = '#000';
+  document.getElementById('ppWm').style.color = '#fff';
+  document.getElementById('ppLabel').style.color = labelOnDark;
+  document.getElementById('ppId').style.color = 'rgba(255,255,255,0.35)';
+  document.getElementById('ppSize').style.color = 'rgba(255,255,255,0.35)';
+  const bar = document.getElementById('ppBar');
+  bar.style.background = isNoColor ? 'rgba(255,255,255,0.15)' : `linear-gradient(90deg, ${c} 0%, ${c} 30%, rgba(255,255,255,0.08) 30%)`;
+  document.getElementById('ppRight').style.background = dk;
+  document.getElementById('ppBoot').style.color = isNoColor ? 'rgba(255,255,255,0.04)' : c;
+  document.getElementById('ppBoot').style.opacity = isNoColor ? '0.3' : '0.08';
+
+  // ── BCARD ──
+  document.getElementById('pbFront').style.background = '#fff';
+  document.getElementById('pbWm').style.color = dk;
+  document.getElementById('pbName').style.color = dk;
+  document.getElementById('pbRole').style.color = light;
+  document.getElementById('pbLine').style.background = accentForWhiteBg;
+  document.getElementById('pbBack').style.background = dk;
+  document.getElementById('pbContact').style.color = 'rgba(255,255,255,0.5)';
+  document.getElementById('pbTag').style.color = labelOnDark;
+}
+
+// ══════════════════════════════════════════════════════
+// UPDATE ARGUMENTS
+// ══════════════════════════════════════════════════════
+function updateArguments() {
+  const d = directions[selected];
+  const c = d.hex;
+  const isNoColor = selected === 5;
+  const accentColor = isNoColor ? '#1A1A1A' : c;
+
+  const grid = document.getElementById('argGrid');
+  grid.innerHTML = d.arguments.map((a, i) => `
+    <div class="argument-card">
+      <div class="argument-for" style="color: ${accentColor};">FOR</div>
+      <div class="argument-title">${a.title}</div>
+      <div class="argument-body">${a.body}</div>
+      ${d.counterArgs[i] ? `
+        <div class="argument-against">
+          <div class="argument-against-label">AGAINST</div>
+          <div class="argument-against-text">${d.counterArgs[i].text}</div>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('.preview-nav-item').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const d = directions[selected];
+    const isNoColor = selected === 5;
+    document.querySelectorAll('.preview-nav-item').forEach(t => {
+      t.classList.remove('active');
+      t.style.borderBottomColor = 'transparent';
+    });
+    tab.classList.add('active');
+    tab.style.borderBottomColor = isNoColor ? '#1A1A1A' : d.hex;
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-pane="${tab.dataset.pane}"]`).classList.add('active');
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+renderGrid();
+updatePreview();
+updateArguments();
+</script>
+
+</body>
+</html>
