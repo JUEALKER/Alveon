@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Wordmark Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --dark: #201C16;
+    --mid: #6E655A;
+    --light: #9A8E80;
+    --pale: #D1C9BD;
+    --near-white: #F7F5F0;
+    --white: #FFFFFF;
+    --orange: #F05A10;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: var(--font-display); background: var(--white); color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--near-white); padding: 16px 48px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-wordmark { font-weight: 800; font-size: 14px; letter-spacing: 0.1em; }
+  .nav-doc { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); }
+
+  section { padding: 120px 48px 100px; max-width: 1100px; margin: 0 auto; }
+  section:first-of-type { padding-top: 140px; }
+  .full { max-width: 100%; }
+  .full .inner { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+  .bg-dark { background: var(--dark); color: var(--white); }
+  .bg-black { background: #000; color: var(--white); }
+  .bg-off { background: var(--near-white); }
+
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 32px; }
+  .title { font-weight: 800; font-size: clamp(26px, 3.5vw, 38px); line-height: 1.1; margin-bottom: 12px; }
+  .subtitle { font-weight: 400; font-size: 15px; line-height: 1.65; color: var(--mid); max-width: 660px; margin-bottom: 48px; }
+
+  /* ── WORDMARK DISPLAY ── */
+  .wm-card {
+    border-radius: 12px; overflow: hidden; margin-bottom: 24px;
+    border: 1px solid var(--pale); position: relative;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .wm-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.08); }
+  .wm-card.selected { border-color: var(--dark); border-width: 2px; }
+  .wm-card.selected::after {
+    content: '✓'; position: absolute; top: 16px; right: 16px; z-index: 2;
+    width: 26px; height: 26px; background: var(--dark); color: #fff;
+    border-radius: 50%; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wm-display {
+    display: grid; grid-template-columns: 1fr 1fr;
+    min-height: 220px;
+  }
+  .wm-on-white {
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 32px; background: var(--white);
+  }
+  .wm-on-black {
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 32px; background: #000;
+  }
+  .wm-info {
+    padding: 20px 28px; background: var(--near-white);
+    display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: start;
+  }
+  .wm-info-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--orange); letter-spacing: 0.1em; }
+  .wm-info-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+  .wm-info-desc { font-size: 13px; line-height: 1.55; color: var(--mid); }
+  .wm-info-specs { font-family: var(--font-mono); font-size: 10px; color: var(--light); line-height: 1.6; }
+
+  /* ── WORDMARK RENDERING ── */
+  .wm-text {
+    font-family: var(--font-display);
+    user-select: none;
+  }
+
+  /* Direction A: Clean Geometric */
+  .wm-a { font-weight: 800; font-size: 48px; letter-spacing: 0.12em; }
+
+  /* Direction B: Tight Precision */
+  .wm-b { font-weight: 800; font-size: 48px; letter-spacing: 0.02em; }
+
+  /* Direction C: Extended Tracking */
+  .wm-c { font-weight: 700; font-size: 44px; letter-spacing: 0.28em; }
+
+  /* Direction D: Heavy + Condensed feel via scale */
+  .wm-d { font-weight: 900; font-size: 52px; letter-spacing: 0.06em; }
+
+  /* Direction E: Light Authority */
+  .wm-e { font-weight: 500; font-size: 48px; letter-spacing: 0.18em; }
+
+  /* Direction F: Mixed Weight */
+  .wm-f { font-weight: 800; font-size: 48px; letter-spacing: 0.1em; }
+
+  /* ── KERNING DETAIL ── */
+  .kern-display {
+    display: flex; align-items: baseline; justify-content: center;
+    padding: 64px 32px 48px;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 120px; letter-spacing: 0;
+    position: relative;
+  }
+  .kern-letter {
+    position: relative;
+    display: inline-block;
+  }
+  .kern-guide {
+    position: absolute; top: 0; bottom: 0;
+    border-left: 1px dashed rgba(240,90,16,0.3);
+  }
+  .kern-value {
+    position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 9px; color: var(--orange);
+    white-space: nowrap;
+  }
+  .kern-baseline {
+    position: absolute; left: 0; right: 0;
+    border-bottom: 1px solid rgba(240,90,16,0.15);
+  }
+
+  /* ── SIZE SCALE ── */
+  .size-row {
+    display: flex; align-items: baseline; gap: 24px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--near-white);
+  }
+  .size-label {
+    font-family: var(--font-mono); font-size: 10px; color: var(--light);
+    width: 100px; flex-shrink: 0; text-align: right;
+  }
+
+  /* ── ICON GRID ── */
+  .icon-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 24px; margin-bottom: 32px;
+  }
+  .icon-card {
+    border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--pale);
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+  .icon-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .icon-card.selected { border-color: var(--dark); border-width: 2px; }
+  .icon-card.selected::after {
+    content: '✓'; position: absolute; top: 10px; right: 10px; z-index: 2;
+    width: 22px; height: 22px; background: var(--dark); color: #fff;
+    border-radius: 50%; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-preview {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  }
+  .icon-info {
+    padding: 14px 16px; background: var(--near-white);
+  }
+  .icon-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .icon-desc { font-size: 11px; color: var(--mid); line-height: 1.4; }
+
+  /* ── FAVICON CONTEXTS ── */
+  .favicon-row {
+    display: flex; align-items: center; gap: 32px;
+    padding: 32px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .fav-browser {
+    display: flex; align-items: center; gap: 12px;
+    background: #f0f0f0; padding: 8px 16px; border-radius: 8px;
+    font-size: 12px; color: #666;
+  }
+  .fav-icon-slot {
+    width: 16px; height: 16px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .fav-app-icon {
+    width: 60px; height: 60px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── SVG ICONS ── */
+  .icon-svg-container {
+    width: 80px; height: 80px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ── LOCKUP SECTION ── */
+  .lockup-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 24px; margin-bottom: 32px;
+  }
+  .lockup-card {
+    border-radius: 12px; overflow: hidden;
+    min-height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 32px;
+    position: relative;
+  }
+  .lockup-label {
+    position: absolute; bottom: 12px; left: 16px;
+    font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.25);
+    letter-spacing: 0.06em;
+  }
+  .lockup-label-dark {
+    position: absolute; bottom: 12px; left: 16px;
+    font-family: var(--font-mono); font-size: 9px; color: var(--light);
+    letter-spacing: 0.06em;
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 24px; }
+    section { padding: 80px 24px 60px; }
+    .full .inner { padding: 0 24px; }
+    .wm-display { grid-template-columns: 1fr; }
+    .icon-grid { grid-template-columns: repeat(2, 1fr); }
+    .lockup-grid { grid-template-columns: 1fr; }
+    .kern-display { font-size: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">WORDMARK EXPLORATION</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 01: THE PROBLEM                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">01 — The Problem</div>
+  <h1 class="title">A font setting is not a wordmark.</h1>
+  <p class="subtitle">Right now, ALVEON is Outfit ExtraBold with 0.1em tracking. That is a placeholder. A wordmark needs intentional kerning, considered weight, and a clear point of view about what the brand looks like when nothing else is there.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+    <div style="padding: 28px; border-radius: 10px; border: 1px solid var(--pale);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 12px;">THE LETTERS</div>
+      <div style="font-size: 14px; line-height: 1.6; color: var(--mid);">
+        <strong style="color: var(--dark);">A-L-V-E-O-N</strong> has interesting geometry. The A and V are diagonal mirrors. The L bridges them with a right angle. The E and O bring curves. The N closes with stability. The AV pair is the critical kerning challenge — two diagonals that either click or create a hole.
+      </div>
+    </div>
+    <div style="padding: 28px; border-radius: 10px; border: 1px solid var(--pale);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 12px;">THE CHALLENGE</div>
+      <div style="font-size: 14px; line-height: 1.6; color: var(--mid);">
+        The wordmark must work at 9px (favicon) and 900px (signage). It must be legible on product labels at 4mm height. It must feel like engineering, not fashion. And it must stand alone — no symbol required — as the primary brand identifier.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 02: SIX DIRECTIONS                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid var(--near-white);">
+  <div class="label">02 — Six Directions</div>
+  <h1 class="title">Weight, tracking, character.</h1>
+  <p class="subtitle">Same typeface, six different personalities. Each direction makes a different claim about what Alveon is. Click to select.</p>
+
+  <!-- Direction A -->
+  <div class="wm-card selected" data-dir="a">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <span class="wm-text wm-a" style="color: var(--dark);">ALVEON</span>
+      </div>
+      <div class="wm-on-black">
+        <span class="wm-text wm-a" style="color: #fff;">ALVEON</span>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">A</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Clean Geometric</div>
+        <div class="wm-info-desc">The current direction, refined. ExtraBold at generous tracking. Confident, open, systematic. Reads as "engineering company" more than "sports brand." The wide spacing gives each letter room to breathe.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 800 / 48px / 0.12em tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction B -->
+  <div class="wm-card" data-dir="b">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <span class="wm-text wm-b" style="color: var(--dark);">ALVEON</span>
+      </div>
+      <div class="wm-on-black">
+        <span class="wm-text wm-b" style="color: #fff;">ALVEON</span>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">B</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Tight Precision</div>
+        <div class="wm-info-desc">Minimal tracking. The letters lock together like components in a system. More aggressive, more compressed energy. Reads as "performance tool." The AV pair nests tightly — the diagonal geometry becomes a feature, not a gap to manage.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 800 / 48px / 0.02em tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction C -->
+  <div class="wm-card" data-dir="c">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <span class="wm-text wm-c" style="color: var(--dark);">ALVEON</span>
+      </div>
+      <div class="wm-on-black">
+        <span class="wm-text wm-c" style="color: #fff;">ALVEON</span>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">C</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Extended Breath</div>
+        <div class="wm-info-desc">Ultra-wide tracking, lighter weight. The letters float. Each one is an individual — fitting for a brand about individual fit. Reads as "luxury precision" or "architecture studio." Elegant but risks feeling cold or detached.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 700 / 44px / 0.28em tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction D -->
+  <div class="wm-card" data-dir="d">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <span class="wm-text wm-d" style="color: var(--dark);">ALVEON</span>
+      </div>
+      <div class="wm-on-black">
+        <span class="wm-text wm-d" style="color: #fff;">ALVEON</span>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">D</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Heavy Block</div>
+        <div class="wm-info-desc">Maximum weight, larger scale, moderate tracking. The wordmark is a physical object. It has mass. It takes up space like a piece of equipment. Reads as "industrial" and "built." This is a brand that makes things.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 900 / 52px / 0.06em tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction E -->
+  <div class="wm-card" data-dir="e">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <span class="wm-text wm-e" style="color: var(--dark);">ALVEON</span>
+      </div>
+      <div class="wm-on-black">
+        <span class="wm-text wm-e" style="color: #fff;">ALVEON</span>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">E</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Light Authority</div>
+        <div class="wm-info-desc">Medium weight, generous tracking. Quiet confidence. Doesn't shout. Reads as "we don't need to prove anything." This is the Aesop, Bottega Veneta approach — authority through restraint. Risk: could feel too passive for a startup.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 500 / 48px / 0.18em tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direction F -->
+  <div class="wm-card" data-dir="f">
+    <div class="wm-display">
+      <div class="wm-on-white">
+        <div class="wm-text wm-f" style="color: var(--dark);">
+          <span style="font-weight: 400;">A</span>LVEO<span style="font-weight: 400;">N</span>
+        </div>
+      </div>
+      <div class="wm-on-black">
+        <div class="wm-text wm-f" style="color: #fff;">
+          <span style="font-weight: 400;">A</span>LVEO<span style="font-weight: 400;">N</span>
+        </div>
+      </div>
+    </div>
+    <div class="wm-info">
+      <div>
+        <div class="wm-info-label">F</div>
+      </div>
+      <div>
+        <div class="wm-info-name">Mixed Weight</div>
+        <div class="wm-info-desc">The A and N in Regular, the core LVEO in ExtraBold. The framing letters are lighter, creating a visual bracket. This is the most "designed" option — it has a concept built in. The risk: it's a trick, and tricks age faster than systems.</div>
+        <div class="wm-info-specs" style="margin-top: 8px;">Outfit 400+800 / 48px / 0.1em tracking</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 03: KERNING DETAIL                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full bg-off" style="padding: 120px 0;">
+  <div class="inner">
+    <div class="label">03 — Kerning Pairs</div>
+    <h1 class="title">The critical pairs.</h1>
+    <p class="subtitle">Five letter pairs that make or break the wordmark. The AV diagonal is the signature challenge. Default kerning creates a visual hole between diagonal strokes.</p>
+
+    <div style="background: var(--white); border-radius: 12px; overflow: hidden; border: 1px solid var(--pale); margin-bottom: 24px;">
+      <div id="kernDisplay" class="kern-display" style="color: var(--dark);">
+        <div class="kern-baseline" style="bottom: 25%;"></div>
+        <span class="kern-letter" style="position: relative;">
+          A
+          <div class="kern-value" id="kernAL">A–L</div>
+        </span><span class="kern-letter" style="position: relative;">
+          L
+          <div class="kern-value" id="kernLV">L–V</div>
+        </span><span class="kern-letter" style="position: relative;">
+          V
+          <div class="kern-value" id="kernVE">V–E</div>
+        </span><span class="kern-letter" style="position: relative;">
+          E
+          <div class="kern-value" id="kernEO">E–O</div>
+        </span><span class="kern-letter" style="position: relative;">
+          O
+          <div class="kern-value" id="kernON">O–N</div>
+        </span><span class="kern-letter">
+          N
+        </span>
+      </div>
+      <div style="padding: 16px 32px; background: var(--near-white); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--light);">SELECTED DIRECTION APPLIED AT 120PX</span>
+        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--orange);">CUSTOM KERNING REQUIRED FOR FINAL WORDMARK</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;">
+      <div style="background: var(--white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; color: var(--dark); margin-bottom: 8px;">AV</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.06em;">CRITICAL</div>
+        <div style="font-size: 11px; color: var(--mid); margin-top: 6px; line-height: 1.4;">Diagonal mirrors. Needs negative kern to close the optical gap.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; color: var(--dark); margin-bottom: 8px;">AL</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--light); letter-spacing: 0.06em;">MEDIUM</div>
+        <div style="font-size: 11px; color: var(--mid); margin-top: 6px; line-height: 1.4;">Diagonal meets vertical. Usually OK in geometric sans.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; color: var(--dark); margin-bottom: 8px;">LV</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.06em;">CRITICAL</div>
+        <div style="font-size: 11px; color: var(--mid); margin-top: 6px; line-height: 1.4;">Vertical meets diagonal. The L-bar creates whitespace above.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; color: var(--dark); margin-bottom: 8px;">EO</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--light); letter-spacing: 0.06em;">MEDIUM</div>
+        <div style="font-size: 11px; color: var(--mid); margin-top: 6px; line-height: 1.4;">Straight meets round. Needs slight tightening.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 8px; padding: 20px; text-align: center; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; color: var(--dark); margin-bottom: 8px;">ON</div>
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--light); letter-spacing: 0.06em;">LOW</div>
+        <div style="font-size: 11px; color: var(--mid); margin-top: 6px; line-height: 1.4;">Round meets vertical. Generally well-spaced by default.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 04: SIZE SCALE                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">04 — Size Scale</div>
+  <h1 class="title">From product label to trade show.</h1>
+  <p class="subtitle">The wordmark must work at every scale. Below: the selected direction rendered at key sizes. Watch for legibility loss at small sizes and structural weaknesses at large scales.</p>
+
+  <div id="sizeScale">
+    <div class="size-row">
+      <div class="size-label">Favicon<br><span style="color: var(--pale);">16px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 10px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+    <div class="size-row">
+      <div class="size-label">Label<br><span style="color: var(--pale);">11px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 11px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+    <div class="size-row">
+      <div class="size-label">Nav<br><span style="color: var(--pale);">14px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 14px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+    <div class="size-row">
+      <div class="size-label">Card<br><span style="color: var(--pale);">20px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+    <div class="size-row">
+      <div class="size-label">Signage<br><span style="color: var(--pale);">48px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 48px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+    <div class="size-row">
+      <div class="size-label">Hero<br><span style="color: var(--pale);">80px</span></div>
+      <div class="wm-text" style="font-family: var(--font-display); font-weight: 800; font-size: 80px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 05: ICON / FAVICON                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full bg-dark" style="padding: 120px 0;">
+  <div class="inner">
+    <div class="label" style="color: var(--orange);">05 — Icon / Favicon</div>
+    <h1 class="title">The A at smallest scale.</h1>
+    <p class="subtitle">The "A" from ALVEON becomes the icon and favicon. Four treatments of the same letter. The icon must work at 16×16px (favicon), 60×60px (app), and 120×120px (social).</p>
+
+    <div class="icon-grid">
+      <!-- Icon 1: Simple A -->
+      <div class="icon-card selected" data-icon="1">
+        <div class="icon-preview" style="background: #000;">
+          <div style="font-family: var(--font-display); font-weight: 800; font-size: 52px; color: #fff; letter-spacing: 0;">A</div>
+        </div>
+        <div class="icon-info" style="background: rgba(255,255,255,0.05);">
+          <div class="icon-name" style="color: #fff;">Pure Letter</div>
+          <div class="icon-desc" style="color: rgba(255,255,255,0.4);">White A on black. Maximum simplicity. The letterform does all the work. No container, no embellishment.</div>
+        </div>
+      </div>
+
+      <!-- Icon 2: A with ember accent -->
+      <div class="icon-card" data-icon="2">
+        <div class="icon-preview" style="background: #000;">
+          <div style="position: relative; font-family: var(--font-display); font-weight: 800; font-size: 52px; color: #fff; letter-spacing: 0;">
+            A
+            <div style="position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: var(--orange); border-radius: 50%;"></div>
+          </div>
+        </div>
+        <div class="icon-info" style="background: rgba(255,255,255,0.05);">
+          <div class="icon-name" style="color: #fff;">Letter + Signal</div>
+          <div class="icon-desc" style="color: rgba(255,255,255,0.4);">White A with an Ember dot. The crossbar area of the A becomes a scan point. Connects to measurement/precision.</div>
+        </div>
+      </div>
+
+      <!-- Icon 3: A in square -->
+      <div class="icon-card" data-icon="3">
+        <div class="icon-preview" style="background: #000;">
+          <div style="width: 72px; height: 72px; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;">
+            <div style="font-family: var(--font-display); font-weight: 800; font-size: 42px; color: #fff; letter-spacing: 0;">A</div>
+          </div>
+        </div>
+        <div class="icon-info" style="background: rgba(255,255,255,0.05);">
+          <div class="icon-name" style="color: #fff;">Contained</div>
+          <div class="icon-desc" style="color: rgba(255,255,255,0.4);">A in a thin square container. Reads as "scan area" or "measurement zone." More structured, more technical. Risk: generic.</div>
+        </div>
+      </div>
+
+      <!-- Icon 4: A monogram ember -->
+      <div class="icon-card" data-icon="4">
+        <div class="icon-preview" style="background: var(--orange);">
+          <div style="font-family: var(--font-display); font-weight: 800; font-size: 52px; color: #fff; letter-spacing: 0;">A</div>
+        </div>
+        <div class="icon-info" style="background: rgba(255,255,255,0.05);">
+          <div class="icon-name" style="color: #fff;">Ember Ground</div>
+          <div class="icon-desc" style="color: rgba(255,255,255,0.4);">White A on Ember. Bold, identifiable, high contrast. The signal color carries the identity. Works well as app icon.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Context: Favicon + App -->
+    <div style="margin-top: 48px;">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 20px;">IN CONTEXT</div>
+
+      <div class="favicon-row" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.3); margin-bottom: 10px;">BROWSER TAB</div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #2a2a2a; padding: 8px 16px 8px 10px; border-radius: 6px 6px 0 0;">
+            <div class="fav-icon-slot" id="favSlot" style="background: #000; border-radius: 2px;">
+              <span style="font-family: var(--font-display); font-weight: 800; font-size: 10px; color: #fff;">A</span>
+            </div>
+            <span style="font-size: 11px; color: rgba(255,255,255,0.5);">ALVEON — Engineered for One</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.3); margin-bottom: 10px;">APP ICON</div>
+          <div class="fav-app-icon" id="appIcon" style="background: #000;">
+            <span style="font-family: var(--font-display); font-weight: 800; font-size: 28px; color: #fff;">A</span>
+          </div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.3); margin-bottom: 10px;">SOCIAL AVATAR</div>
+          <div style="width: 48px; height: 48px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;" id="socialIcon" style="background: #000;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #000; display: flex; align-items: center; justify-content: center;">
+              <span style="font-family: var(--font-display); font-weight: 800; font-size: 22px; color: #fff;">A</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 06: LOCKUPS                                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">06 — Lockups</div>
+  <h1 class="title">Wordmark + tagline configurations.</h1>
+  <p class="subtitle">The primary lockup is wordmark only. The secondary lockup adds "Engineered for One" in JetBrains Mono. These are the only two approved configurations.</p>
+
+  <div class="lockup-grid">
+    <!-- Primary: wordmark only, dark bg -->
+    <div class="lockup-card" style="background: #000;">
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: 0.12em; color: #fff;">ALVEON</div>
+      </div>
+      <div class="lockup-label">PRIMARY / DARK</div>
+    </div>
+
+    <!-- Primary: wordmark only, light bg -->
+    <div class="lockup-card" style="background: var(--white); border: 1px solid var(--pale);">
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+      </div>
+      <div class="lockup-label-dark">PRIMARY / LIGHT</div>
+    </div>
+
+    <!-- Secondary: with tagline, dark bg -->
+    <div class="lockup-card" style="background: #000;">
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: 0.12em; color: #fff; margin-bottom: 10px;">ALVEON</div>
+        <div style="font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; color: var(--orange);">ENGINEERED FOR ONE</div>
+      </div>
+      <div class="lockup-label">SECONDARY / DARK</div>
+    </div>
+
+    <!-- Secondary: with tagline, light bg -->
+    <div class="lockup-card" style="background: var(--white); border: 1px solid var(--pale);">
+      <div style="text-align: center;">
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: 0.12em; color: var(--dark); margin-bottom: 10px;">ALVEON</div>
+        <div style="font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; color: var(--orange);">ENGINEERED FOR ONE</div>
+      </div>
+      <div class="lockup-label-dark">SECONDARY / LIGHT</div>
+    </div>
+  </div>
+
+  <!-- Clear space -->
+  <div style="margin-top: 48px;">
+    <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">CLEAR SPACE RULE</div>
+    <div style="background: var(--near-white); border-radius: 10px; padding: 48px; display: flex; align-items: center; justify-content: center;">
+      <div style="position: relative; display: inline-block;">
+        <div style="position: absolute; top: -24px; left: -24px; right: -24px; bottom: -24px; border: 1px dashed var(--orange); opacity: 0.3; border-radius: 4px;"></div>
+        <div style="position: absolute; top: -24px; left: 0; font-family: var(--font-mono); font-size: 8px; color: var(--orange); opacity: 0.6;">← 1× cap height →</div>
+        <div style="font-family: var(--font-display); font-weight: 800; font-size: 36px; letter-spacing: 0.12em; color: var(--dark);">ALVEON</div>
+      </div>
+    </div>
+    <div style="font-size: 13px; line-height: 1.6; color: var(--mid); margin-top: 12px;">Minimum clear space around the wordmark equals the cap height of the "A" at its rendered size. No other elements, text, or edges may enter this zone. This rule applies at all sizes.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 07: NEXT STEPS                                  -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full bg-off" style="padding: 80px 0;">
+  <div class="inner">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 12px;">WHAT WE CAN DO HERE</div>
+        <div style="font-size: 14px; line-height: 1.6; color: var(--mid);">Choose direction, weight, tracking. Test at all scales. Define lockup rules, clear space, and icon derivation. This gets us 80% of the way.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 12px;">WHAT NEEDS A TYPE DESIGNER</div>
+        <div style="font-size: 14px; line-height: 1.6; color: var(--mid);">Custom kerning table. Optical adjustments to individual letterforms. Potential custom cuts of specific letters (the A crossbar, the V angle). Converting to outlined vector format.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 12px;">RECOMMENDATION</div>
+        <div style="font-size: 14px; line-height: 1.6; color: var(--mid);">Lock the direction now. Use the Outfit-based setting as working wordmark for all current materials. Commission custom lettering when seed funding allows — the direction won't change, only the craft level.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div style="background: #000; padding: 48px;">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <span style="font-weight: 800; font-size: 12px; letter-spacing: 0.1em; color: var(--orange);">ALVEON</span>
+      <span style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.25); margin-left: 16px;">Wordmark Exploration v1.0</span>
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.2);">February 2026 &middot; Confidential</div>
+  </div>
+</div>
+
+<script>
+// Wordmark direction selection
+document.querySelectorAll('.wm-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.wm-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const dir = card.dataset.dir;
+    updateKernDisplay(dir);
+    updateSizeScale(dir);
+  });
+});
+
+// Icon selection
+document.querySelectorAll('.icon-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.icon-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+  });
+});
+
+const dirStyles = {
+  a: { weight: 800, size: 120, tracking: 0.12, sizeScale: [10,11,14,20,48,80], trackingScale: 0.12 },
+  b: { weight: 800, size: 120, tracking: 0.02, sizeScale: [10,11,14,20,48,80], trackingScale: 0.02 },
+  c: { weight: 700, size: 110, tracking: 0.28, sizeScale: [10,11,14,20,44,72], trackingScale: 0.28 },
+  d: { weight: 900, size: 130, tracking: 0.06, sizeScale: [11,12,16,22,52,88], trackingScale: 0.06 },
+  e: { weight: 500, size: 120, tracking: 0.18, sizeScale: [10,11,14,20,48,80], trackingScale: 0.18 },
+  f: { weight: 800, size: 120, tracking: 0.10, sizeScale: [10,11,14,20,48,80], trackingScale: 0.10 },
+};
+
+function updateKernDisplay(dir) {
+  const s = dirStyles[dir];
+  const el = document.getElementById('kernDisplay');
+  el.style.fontWeight = s.weight;
+  el.style.fontSize = s.size + 'px';
+  el.style.letterSpacing = s.tracking + 'em';
+}
+
+function updateSizeScale(dir) {
+  const s = dirStyles[dir];
+  const rows = document.querySelectorAll('#sizeScale .size-row .wm-text');
+  const sizes = s.sizeScale;
+  rows.forEach((row, i) => {
+    row.style.fontWeight = s.weight;
+    row.style.fontSize = sizes[i] + 'px';
+    row.style.letterSpacing = s.trackingScale + 'em';
+    if (dir === 'f' && sizes[i] >= 20) {
+      row.innerHTML = '<span style="font-weight:400">A</span>LVEO<span style="font-weight:400">N</span>';
+    } else {
+      row.textContent = 'ALVEON';
+    }
+  });
+}
+</script>
+
+</body>
+</html>

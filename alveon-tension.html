@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Tension Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --dark: #201C16;
+    --mid: #6E655A;
+    --light: #9A8E80;
+    --pale: #D1C9BD;
+    --near-white: #F7F5F0;
+    --white: #FFFFFF;
+    --orange: #F05A10;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: var(--font-display); background: var(--white); color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--near-white); padding: 16px 48px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-wordmark { font-weight: 900; font-size: 14px; letter-spacing: 0.06em; }
+  .nav-doc { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); }
+
+  section { padding: 120px 48px 100px; max-width: 1100px; margin: 0 auto; }
+  section:first-of-type { padding-top: 140px; }
+  .full { max-width: 100%; }
+  .full .inner { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 32px; }
+  .title { font-weight: 900; font-size: clamp(26px, 3.5vw, 38px); line-height: 1.1; margin-bottom: 12px; }
+  .subtitle { font-weight: 400; font-size: 15px; line-height: 1.65; color: var(--mid); max-width: 660px; margin-bottom: 48px; }
+
+  /* ── DIRECTION CARDS ── */
+  .dir-section {
+    margin-bottom: 80px;
+    padding-bottom: 80px;
+    border-bottom: 1px solid var(--near-white);
+  }
+  .dir-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .dir-header {
+    display: grid; grid-template-columns: auto 1fr; gap: 24px;
+    margin-bottom: 32px; align-items: start;
+  }
+  .dir-num {
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    color: var(--orange); width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--orange); border-radius: 50%;
+    flex-shrink: 0; margin-top: 4px;
+  }
+  .dir-name { font-weight: 900; font-size: 24px; margin-bottom: 4px; }
+  .dir-concept { font-size: 14px; line-height: 1.6; color: var(--mid); max-width: 580px; }
+
+  /* ── DEMO FRAMES ── */
+  .demo-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    margin-bottom: 24px;
+  }
+  .demo-frame {
+    border-radius: 10px; overflow: hidden; min-height: 340px;
+    position: relative;
+  }
+  .demo-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 10px 16px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em;
+    background: rgba(0,0,0,0.5); color: rgba(255,255,255,0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  /* ── ARGUMENT BOX ── */
+  .arg-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    margin-top: 24px;
+  }
+  .arg-box {
+    padding: 24px; border-radius: 8px;
+    border: 1px solid var(--near-white);
+  }
+  .arg-tag {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .arg-text { font-size: 13px; line-height: 1.6; color: var(--mid); }
+
+  /* ═══════════════════════════════════════════ */
+  /* TENSION A: SCAN LINE                        */
+  /* ═══════════════════════════════════════════ */
+  .scan-line-demo {
+    background: #000; padding: 64px 48px;
+    position: relative; overflow: hidden;
+  }
+  .scan-line {
+    position: absolute; left: 0; right: 0;
+    height: 1px; background: var(--orange);
+    opacity: 0.6;
+  }
+  .scan-line-glow {
+    position: absolute; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(240,90,16,0.08) 0%, transparent 100%);
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* TENSION B: DATA GRID                        */
+  /* ═══════════════════════════════════════════ */
+  .data-grid-demo {
+    background: #000; padding: 64px 48px;
+    position: relative; overflow: hidden;
+  }
+  .data-grid-bg {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(240,90,16,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,90,16,0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .data-grid-highlight {
+    position: absolute;
+    border: 1px solid rgba(240,90,16,0.25);
+    border-radius: 2px;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* TENSION C: THE CUT                          */
+  /* ═══════════════════════════════════════════ */
+  .cut-demo {
+    position: relative; overflow: hidden;
+  }
+  .cut-diagonal {
+    position: absolute; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--orange);
+    transform-origin: top center;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* TENSION D: RAW DATA                         */
+  /* ═══════════════════════════════════════════ */
+  .raw-data-demo {
+    background: #000; padding: 48px;
+    position: relative; overflow: hidden;
+  }
+  .raw-data-stream {
+    font-family: var(--font-mono); font-size: 9px;
+    line-height: 1.6; color: rgba(240,90,16,0.2);
+    word-break: break-all; position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0; padding: 16px;
+    overflow: hidden;
+  }
+
+  /* ═══════════════════════════════════════════ */
+  /* TENSION E: COORDINATE SYSTEM                */
+  /* ═══════════════════════════════════════════ */
+  .coord-demo {
+    background: #000; padding: 64px 48px;
+    position: relative; overflow: hidden;
+  }
+  .coord-axis {
+    position: absolute;
+    background: rgba(240,90,16,0.2);
+  }
+  .coord-label {
+    position: absolute;
+    font-family: var(--font-mono); font-size: 8px;
+    color: rgba(240,90,16,0.3);
+  }
+  .coord-point {
+    position: absolute;
+    width: 6px; height: 6px;
+    background: var(--orange);
+    border-radius: 50%;
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 24px; }
+    section { padding: 80px 24px 60px; }
+    .full .inner { padding: 0 24px; }
+    .demo-grid { grid-template-columns: 1fr; }
+    .arg-row { grid-template-columns: 1fr; }
+    .dir-header { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">TENSION EXPLORATION</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- INTRO                                           -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">The Missing Element</div>
+  <h1 class="title">Every system needs a point of friction.</h1>
+  <p class="subtitle">The Alveon brand system is clean, warm, and precise. It could also be a fintech. What's missing is the gesture that makes it unmistakably this brand — something that comes from what Alveon actually does. Scanning. Measuring. Mapping data onto bodies. Five directions for finding that edge.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 32px;">
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">THE RULE</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">The tension element must come from Alveon's process — scanning, measuring, constructing. Not from decoration.</div>
+    </div>
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">THE CONSTRAINT</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">It must work in the existing system (Ember + Warm Sand + Heavy Block wordmark) without breaking it. Additive, not destructive.</div>
+    </div>
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">THE TEST</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">Would someone see this element and think "that's Alveon" without reading the name? It should be ownable, not generic.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- DIRECTION A: THE SCAN LINE                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid var(--near-white);">
+  <div class="dir-section">
+    <div class="dir-header">
+      <div class="dir-num">A</div>
+      <div>
+        <div class="dir-name">The Scan Line</div>
+        <div class="dir-concept">A single horizontal line of Ember that crosses layouts at a fixed position. The literal representation of a 3D scanner's laser passing over a surface. It cuts through images, intersects text, and divides compositions. It's always there. It's always orange. It always means: this is where we measure.</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Hero usage -->
+      <div class="demo-frame scan-line-demo">
+        <div class="scan-line" style="top: 62%;"></div>
+        <div class="scan-line-glow" style="top: 62%;"></div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 20px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 38px; color: #fff; line-height: 1.08; margin-bottom: 16px;">The first made-to-<br>measure football boot.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); max-width: 380px; line-height: 1.6;">We scan. We measure. We construct. One athlete at a time.</div>
+        </div>
+        <div class="demo-label">WEBSITE HERO — Scan line at 62% height</div>
+      </div>
+
+      <!-- Data card usage -->
+      <div class="demo-frame" style="background: var(--white); border: 1px solid var(--pale); padding: 48px; display: flex; flex-direction: column; justify-content: center;">
+        <div style="position: relative;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">SCAN REPORT</div>
+          <div style="font-weight: 900; font-size: 24px; color: var(--dark); margin-bottom: 6px;">Right Foot</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.6; margin-bottom: 24px;">Foot length 271.3mm. Width 98.1mm.<br>Arch height 32.4mm.</div>
+          <div style="height: 1px; background: var(--orange); margin: 0 -48px; opacity: 0.6;"></div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--light); margin-top: 24px;">AV-R-2026-0142 / HAMBURG</div>
+        </div>
+        <div class="demo-label" style="background: var(--near-white); color: var(--light);">DOCUMENT — Scan line as section divider</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Pitch deck -->
+      <div class="demo-frame" style="background: #000; padding: 48px; display: flex; align-items: center;">
+        <div style="position: relative; width: 100%;">
+          <div style="font-weight: 900; font-size: 72px; color: var(--orange); line-height: 1;">76%</div>
+          <div style="height: 1px; background: var(--orange); margin: 16px 0; opacity: 0.4;"></div>
+          <div style="font-size: 15px; color: rgba(255,255,255,0.5); line-height: 1.5;">of footballers experience discomfort<br>in the heel region alone.</div>
+        </div>
+        <div class="demo-label">PITCH DECK — Line separates claim from evidence</div>
+      </div>
+
+      <!-- Business card -->
+      <div class="demo-frame" style="background: #000; padding: 40px; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="font-weight: 900; font-size: 16px; letter-spacing: 0.06em; color: #fff; margin-bottom: 32px;">ALVEON</div>
+          <div style="font-weight: 600; font-size: 14px; color: #fff;">Jurgen Beltz</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 4px;">CO-FOUNDER / CEO</div>
+        </div>
+        <div>
+          <div style="height: 1px; background: var(--orange); margin-bottom: 16px; opacity: 0.6;"></div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.3); line-height: 1.8;">jurgen@alveon.com<br>alveon.com</div>
+        </div>
+        <div class="demo-label">BUSINESS CARD — Line as structural anchor</div>
+      </div>
+    </div>
+
+    <div class="arg-row">
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--orange);">STRENGTH</div>
+        <div class="arg-text">Directly derived from the scanning process. Simple, ownable, infinitely scalable. Works at 1px on screen and 5mm on a building. Can be used as a divider, a highlight, or a compositional anchor. Doesn't compete with the wordmark. The most restrained option — one line.</div>
+      </div>
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--light);">RISK</div>
+        <div class="arg-text">A horizontal line is not exactly groundbreaking. Could feel like a generic HR element if not applied with conviction. Needs consistent placement logic to avoid feeling random. The metaphor (scan line) is subtle — most people will just see a line.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- DIRECTION B: THE DATA LAYER                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="dir-section">
+    <div class="dir-header">
+      <div class="dir-num">B</div>
+      <div>
+        <div class="dir-name">The Data Layer</div>
+        <div class="dir-concept">A subtle 24px measurement grid in Ember that appears behind content in key moments. Like the graph paper under an engineering drawing. It says: this brand is built on data. Every decision is plotted, measured, verified. The grid fades out at the edges, as if the viewing window only shows part of a larger coordinate system.</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <div class="demo-frame data-grid-demo">
+        <div class="data-grid-bg"></div>
+        <div class="data-grid-highlight" style="top: 30%; left: 15%; width: 120px; height: 80px;"></div>
+        <div class="data-grid-highlight" style="top: 55%; left: 50%; width: 90px; height: 60px;"></div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 20px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 38px; color: #fff; line-height: 1.08; margin-bottom: 16px;">The first made-to-<br>measure football boot.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); max-width: 380px; line-height: 1.6;">We scan. We measure. We construct. One athlete at a time.</div>
+        </div>
+        <div class="demo-label">WEBSITE HERO — Data grid as background texture</div>
+      </div>
+
+      <div class="demo-frame" style="background: var(--near-white); padding: 48px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(240,90,16,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(240,90,16,0.04) 1px, transparent 1px); background-size: 24px 24px;"></div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">3D SCANNING</div>
+          <div style="font-weight: 900; font-size: 24px; color: var(--dark); margin-bottom: 8px;">Complete foot geometry.</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.6;">Every surface measured. Including the plantar region most scanners miss.</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--light); margin-top: 20px;">12 SECONDS PER SCAN</div>
+        </div>
+        <div class="demo-label" style="background: rgba(0,0,0,0.04); color: var(--light);">CONTENT CARD — Grid as subtle texture on light</div>
+      </div>
+    </div>
+
+    <div class="arg-row">
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--orange);">STRENGTH</div>
+        <div class="arg-text">Creates immediate "engineering" recognition. Connects to the 8px grid system literally. Can be applied at any opacity for different contexts. Works as a background texture that adds depth without competing. The highlighted zones can draw attention to specific data points.</div>
+      </div>
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--light);">RISK</div>
+        <div class="arg-text">Blueprint/graph paper aesthetic is overused in "tech" branding. Can feel busy or noisy, especially on light backgrounds. The grid-on-grid (layout grid + visual grid) could create moiré or confusion. Works better digitally than in print.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- DIRECTION C: THE DIAGONAL CUT                -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="dir-section">
+    <div class="dir-header">
+      <div class="dir-num">C</div>
+      <div>
+        <div class="dir-name">The Diagonal Cut</div>
+        <div class="dir-concept">A single diagonal line — the angle of the A and V from the wordmark — used as a compositional device. It splits backgrounds, cuts through images, and creates asymmetric divisions. The angle is fixed and derived from the letterforms. It's not arbitrary. It's the geometry of ALVEON itself, extracted and amplified.</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Diagonal split background -->
+      <div class="demo-frame" style="position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #000;"></div>
+        <div style="position: absolute; top: 0; right: 0; bottom: 0; width: 55%; background: var(--dark); clip-path: polygon(15% 0, 100% 0, 100% 100%, 0% 100%);"></div>
+        <div style="position: absolute; top: 0; bottom: 0; width: 3px; background: var(--orange); left: 42%; transform: skewX(-12deg); opacity: 0.7;"></div>
+        <div style="position: relative; z-index: 1; padding: 48px;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 20px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 36px; color: #fff; line-height: 1.08; margin-bottom: 16px;">The football<br>boot is broken.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); max-width: 320px; line-height: 1.6; margin-top: 32px;">We are here to fix it.</div>
+        </div>
+        <div class="demo-label">HERO — Diagonal splits two tones + ember cut</div>
+      </div>
+
+      <!-- Business card with diagonal -->
+      <div class="demo-frame" style="position: relative; overflow: hidden; background: #000;">
+        <div style="position: absolute; top: 0; right: 0; bottom: 0; width: 40%; background: var(--orange); clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);"></div>
+        <div style="position: relative; z-index: 1; padding: 40px; display: flex; flex-direction: column; justify-content: space-between; height: 100%;">
+          <div>
+            <div style="font-weight: 900; font-size: 16px; letter-spacing: 0.06em; color: #fff;">ALVEON</div>
+          </div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px; color: #fff;">Jurgen Beltz</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">CO-FOUNDER / CEO</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 12px; line-height: 1.8;">jurgen@alveon.com<br>alveon.com</div>
+          </div>
+        </div>
+        <div class="demo-label">BUSINESS CARD — Ember diagonal as background</div>
+      </div>
+    </div>
+
+    <div class="arg-row">
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--orange);">STRENGTH</div>
+        <div class="arg-text">Derived from the actual letterforms (A/V angle). Creates dynamic, asymmetric compositions that feel active, not static. The 10% orange rule works perfectly here — a thin diagonal of Ember cuts through a monochrome composition. This is the boldest, most visually distinctive option.</div>
+      </div>
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--light);">RISK</div>
+        <div class="arg-text">Diagonal cuts are a strong trend in sports branding (Nike, Under Armour, PUMA). Could read as "generic sporty" rather than "engineering precision." Hard to control at small scales. The angle needs to be exact and consistent — any variation and it breaks.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- DIRECTION D: RAW COORDINATES                 -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="dir-section">
+    <div class="dir-header">
+      <div class="dir-num">D</div>
+      <div>
+        <div class="dir-name">Raw Coordinates</div>
+        <div class="dir-concept">Tiny, semi-transparent scan coordinates running along edges and margins. Not as decoration — as the actual residue of the manufacturing process. Like the registration marks on a printed sheet or the metadata a scanner leaves behind. The brand shows its work. Every touchpoint whispers: this was measured.</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Hero with coordinates -->
+      <div class="demo-frame" style="background: #000; padding: 48px; position: relative; overflow: hidden;">
+        <!-- Edge coordinates -->
+        <div style="position: absolute; top: 16px; left: 16px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.2); line-height: 1.6; letter-spacing: 0.02em;">
+          x0.000 y0.000 z0.000<br>
+          x0.000 y24.00 z0.000<br>
+          x0.000 y48.00 z0.000
+        </div>
+        <div style="position: absolute; top: 16px; right: 16px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.15); text-align: right; line-height: 1.6;">
+          REF:AV-R-2026-0142<br>
+          SCAN:001 OF 240<br>
+          RES:0.1MM
+        </div>
+        <div style="position: absolute; bottom: 48px; left: 16px; right: 16px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.12); letter-spacing: 0.02em; word-break: break-all; line-height: 1.5;">271.3 98.1 32.4 4.2 186.7 102.3 28.9 3.8 271.1 97.9 32.6 4.1 186.5 102.1 29.0 3.9 271.4 98.2 32.3 4.3 186.8 102.4 28.8 3.7</div>
+        <!-- Main content -->
+        <div style="position: relative; z-index: 1; padding: 32px 0;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 20px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 38px; color: #fff; line-height: 1.08; margin-bottom: 16px;">The first made-to-<br>measure football boot.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); max-width: 380px; line-height: 1.6;">3D scanning. Biomechanical research. Digital manufacturing. Constructed for exactly one player's foot.</div>
+        </div>
+        <div class="demo-label">HERO — Coordinate residue at edges and margins</div>
+      </div>
+
+      <!-- Document with coordinates -->
+      <div class="demo-frame" style="background: var(--white); border: 1px solid var(--pale); padding: 48px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 12px; left: 12px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.15); line-height: 1.6;">
+          p.001<br>v2.0
+        </div>
+        <div style="position: absolute; top: 12px; right: 12px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.15); text-align: right;">
+          210×297<br>A4
+        </div>
+        <div style="position: absolute; bottom: 12px; left: 12px; right: 12px; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.1); letter-spacing: 0.02em;">
+          alveon.gmbh / hamburg / 53.5511°N 9.9937°E / confidential
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">BRAND FOUNDATION</div>
+          <div style="font-weight: 900; font-size: 28px; color: var(--dark); margin-bottom: 10px;">Every foot is different.</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.65; max-width: 420px;">Athletes push their bodies to the limit. They train in the dark, play through pain, and dedicate years of their lives to a sport that demands everything.</div>
+        </div>
+        <div class="demo-label" style="background: var(--near-white); color: var(--light);">DOCUMENT — Coordinates as margin metadata</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Business card -->
+      <div class="demo-frame" style="background: #000; padding: 40px; position: relative; overflow: hidden;">
+        <div style="position: absolute; bottom: 12px; left: 12px; right: 12px; font-family: var(--font-mono); font-size: 6px; color: rgba(240,90,16,0.12); letter-spacing: 0.02em;">53.5511°N 9.9937°E / AV-2026 / HAMBURG</div>
+        <div style="position: absolute; top: 12px; right: 12px; font-family: var(--font-mono); font-size: 6px; color: rgba(240,90,16,0.12);">001/500</div>
+        <div style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; position: relative; z-index: 1;">
+          <div>
+            <div style="font-weight: 900; font-size: 16px; letter-spacing: 0.06em; color: #fff;">ALVEON</div>
+          </div>
+          <div>
+            <div style="height: 1px; background: var(--orange); opacity: 0.4; margin-bottom: 16px;"></div>
+            <div style="font-weight: 600; font-size: 14px; color: #fff;">Jurgen Beltz</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 4px;">CO-FOUNDER / CEO</div>
+          </div>
+        </div>
+        <div class="demo-label">CARD — Coordinates + scan line combined</div>
+      </div>
+
+      <!-- Pitch stat -->
+      <div class="demo-frame" style="background: #000; padding: 48px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.06); line-height: 1.4; padding: 12px; word-break: break-all; overflow: hidden;">271.3 98.1 32.4 4.2 186.7 102.3 28.9 3.8 271.1 97.9 32.6 4.1 186.5 102.1 29.0 3.9 271.4 98.2 32.3 4.3 186.8 102.4 28.8 3.7 270.9 98.0 32.5 4.0 186.6 102.2 29.1 3.8 271.2 98.3 32.2 4.4 186.9 102.5 28.7 3.6 271.3 98.1 32.4 4.2 186.7 102.3 28.9 3.8 271.1 97.9 32.6 4.1 186.5 102.1 29.0 3.9 271.4 98.2 32.3 4.3 186.8 102.4 28.8 3.7 270.9 98.0 32.5 4.0 186.6 102.2 29.1 3.8 271.2 98.3 32.2 4.4 186.9 102.5 28.7 3.6 271.3 98.1 32.4 4.2 186.7 102.3 28.9 3.8 271.1 97.9 32.6 4.1 186.5 102.1 29.0 3.9 271.4 98.2 32.3 4.3 186.8 102.4 28.8 3.7 270.9 98.0 32.5 4.0 186.6 102.2 29.1</div>
+        <div style="position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; justify-content: center;">
+          <div style="font-weight: 900; font-size: 80px; color: var(--orange); line-height: 1;">76%</div>
+          <div style="height: 1px; background: var(--orange); opacity: 0.3; margin: 16px 0;"></div>
+          <div style="font-size: 15px; color: rgba(255,255,255,0.5);">of footballers experience heel discomfort.</div>
+          <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.15); margin-top: 12px;">SOURCE: LOUGHBOROUGH UNIVERSITY / ISEA 2024</div>
+        </div>
+        <div class="demo-label">PITCH DECK — Data stream as background layer</div>
+      </div>
+    </div>
+
+    <div class="arg-row">
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--orange);">STRENGTH</div>
+        <div class="arg-text">The most authentic option. This is what Alveon actually produces — coordinate data. It creates a layered, almost forensic aesthetic. At low opacity, it adds depth without noise. Combines naturally with the scan line. Every piece of communication carries traces of the process. This is hard to copy because it comes from real data.</div>
+      </div>
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--light);">RISK</div>
+        <div class="arg-text">Can feel cluttered if overdone. At small scales (business card), the micro-text becomes unreadable noise. Requires careful opacity control. Might confuse people who think the numbers mean something specific. Needs a clear rule about when and where it appears.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- DIRECTION E: THE PRESSURE MAP                -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="dir-section">
+    <div class="dir-header">
+      <div class="dir-num">E</div>
+      <div>
+        <div class="dir-name">The Pressure Map</div>
+        <div class="dir-concept">Abstract topographic shapes derived from foot pressure data — not literal heatmaps, but simplified contour forms in Ember at low opacity. Like the ghost of a foot scan that haunts every layout. The organic, irregular shapes create tension against the rigid grid system. Biology meets engineering.</div>
+      </div>
+    </div>
+
+    <div class="demo-grid">
+      <div class="demo-frame" style="background: #000; padding: 48px; position: relative; overflow: hidden;">
+        <!-- Abstract pressure shapes -->
+        <div style="position: absolute; top: 15%; right: 8%; width: 200px; height: 320px; border-radius: 45% 55% 40% 60% / 50% 45% 55% 50%; background: radial-gradient(ellipse at 40% 35%, rgba(240,90,16,0.1) 0%, rgba(240,90,16,0.03) 60%, transparent 80%); transform: rotate(-8deg);"></div>
+        <div style="position: absolute; top: 25%; right: 14%; width: 100px; height: 140px; border-radius: 50% 50% 45% 55% / 55% 45% 50% 50%; border: 1px solid rgba(240,90,16,0.08); transform: rotate(-5deg);"></div>
+        <div style="position: absolute; top: 35%; right: 18%; width: 50px; height: 70px; border-radius: 50%; border: 1px solid rgba(240,90,16,0.12); transform: rotate(-3deg);"></div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 20px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 38px; color: #fff; line-height: 1.08; margin-bottom: 16px;">Every foot is<br>different.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.4); max-width: 360px; line-height: 1.6; margin-top: 24px;">3D scanning captures what the eye cannot. Pressure mapping reveals what the body hides.</div>
+        </div>
+        <div class="demo-label">HERO — Abstract pressure contours in Ember</div>
+      </div>
+
+      <div class="demo-frame" style="background: var(--near-white); padding: 48px; position: relative; overflow: hidden;">
+        <!-- Lighter pressure shapes -->
+        <div style="position: absolute; bottom: 10%; right: 5%; width: 180px; height: 280px; border-radius: 45% 55% 40% 60% / 50% 45% 55% 50%; background: radial-gradient(ellipse at 40% 35%, rgba(240,90,16,0.06) 0%, rgba(240,90,16,0.02) 60%, transparent 80%); transform: rotate(-8deg);"></div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">BIOMECHANICS</div>
+          <div style="font-weight: 900; font-size: 24px; color: var(--dark); margin-bottom: 8px;">Pressure mapping.</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.6; max-width: 360px;">Dynamic load analysis under game conditions. 240 Hz sampling rate. Every step recorded, every force measured.</div>
+          <div style="font-family: var(--font-mono); font-size: 10px; color: var(--light); margin-top: 20px;">240 HZ / 4096 SENSORS</div>
+        </div>
+        <div class="demo-label" style="background: rgba(0,0,0,0.03); color: var(--light);">CARD — Subtle pressure ghost on light background</div>
+      </div>
+    </div>
+
+    <div class="arg-row">
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--orange);">STRENGTH</div>
+        <div class="arg-text">The most visually unique option. Organic shapes against rigid grids create genuine tension. Directly derived from Alveon's actual technology (pressure plates). No other brand has this visual vocabulary. The shapes are abstract enough to be flexible but specific enough to be ownable. Biology vs. engineering, rendered.</div>
+      </div>
+      <div class="arg-box">
+        <div class="arg-tag" style="color: var(--light);">RISK</div>
+        <div class="arg-text">Hard to reproduce consistently — every application needs custom shapes. Could look like a heat map or weather map if not carefully controlled. Requires real or realistic pressure data to feel authentic. The organic forms could fight the geometric precision of the rest of the system. Most complex to implement.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- VERDICT                                         -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full" style="background: #000; padding: 100px 0;">
+  <div class="inner">
+    <div class="label" style="color: var(--orange);">Recommendation</div>
+    <h2 class="title" style="color: #fff; max-width: 700px;">Combine A + D. The scan line and the raw coordinates.</h2>
+    <p style="font-size: 15px; line-height: 1.65; color: rgba(255,255,255,0.45); max-width: 640px; margin-top: 16px; margin-bottom: 40px;">
+      The scan line is the primary gesture — simple, scalable, ownable. The raw coordinates are the secondary layer — they add depth and authenticity when the context allows. Together they create a system: the line is the measurement, the numbers are the evidence. One works at every scale. The other rewards attention.
+    </p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+      <div style="padding: 24px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 10px;">ALWAYS</div>
+        <div style="font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.4);">The scan line. One Ember horizontal per composition. Position: 60-65% from top (the golden section of measurement).</div>
+      </div>
+      <div style="padding: 24px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 10px;">SOMETIMES</div>
+        <div style="font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.4);">Raw coordinates at edges. On documents, pitch decks, website. At 5-15% opacity. Real or realistic scan data. Ember only.</div>
+      </div>
+      <div style="padding: 24px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 10px;">NEVER</div>
+        <div style="font-size: 13px; line-height: 1.6; color: rgba(255,255,255,0.4);">Both at high opacity. Coordinates without the scan line. Data layers that compete with actual content. Decorative use of numbers.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div style="background: #000; padding: 48px; border-top: 1px solid rgba(255,255,255,0.04);">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <span style="font-weight: 900; font-size: 12px; letter-spacing: 0.06em; color: var(--orange);">ALVEON</span>
+      <span style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.25); margin-left: 16px;">Tension Exploration v1.0</span>
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.2);">February 2026 &middot; Confidential</div>
+  </div>
+</div>
+
+</body>
+</html>

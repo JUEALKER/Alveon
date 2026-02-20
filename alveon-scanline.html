@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON The Scan Line — Refined</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --dark: #201C16;
+    --mid: #6E655A;
+    --light: #9A8E80;
+    --pale: #D1C9BD;
+    --near-white: #F7F5F0;
+    --white: #FFFFFF;
+    --orange: #F05A10;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: var(--font-display); background: var(--white); color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--near-white); padding: 16px 48px; display: flex; align-items: center; justify-content: space-between; }
+  .nav-wordmark { font-weight: 900; font-size: 14px; letter-spacing: 0.06em; }
+  .nav-doc { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--orange); }
+
+  section { padding: 120px 48px 100px; max-width: 1100px; margin: 0 auto; }
+  section:first-of-type { padding-top: 140px; }
+  .full { max-width: 100%; }
+  .full .inner { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); margin-bottom: 32px; }
+  .title { font-weight: 900; font-size: clamp(26px, 3.5vw, 38px); line-height: 1.1; margin-bottom: 12px; }
+  .subtitle { font-weight: 400; font-size: 15px; line-height: 1.65; color: var(--mid); max-width: 660px; margin-bottom: 48px; }
+
+  /* ── THE SCAN LINE COMPONENT ── */
+
+  /*
+    The scan line is ONE object with three parts:
+    1. The line itself: 1px, Ember, 8% opacity (resting) / 40% (active)
+    2. Left readout: coordinate data at the origin point
+    3. Right readout: metadata at the end point
+
+    It is always horizontal.
+    It always spans the full width of its container.
+    Its vertical position is fixed at 61.8% (golden ratio).
+  */
+
+  .scanline {
+    position: absolute;
+    left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .scanline-wire {
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    height: 1px;
+    background: var(--orange);
+    transform: translateY(-0.5px);
+  }
+  .scanline-readout {
+    font-family: var(--font-mono);
+    font-size: 7px;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    white-space: nowrap;
+    position: relative;
+    z-index: 1;
+  }
+  .scanline-readout-left {
+    padding-right: 12px;
+  }
+  .scanline-readout-right {
+    margin-left: auto;
+    padding-left: 12px;
+    text-align: right;
+  }
+
+  /* Resting state: nearly invisible */
+  .scanline.rest .scanline-wire { opacity: 0.08; }
+  .scanline.rest .scanline-readout { opacity: 0; }
+
+  /* Subtle state: line visible, readouts faint */
+  .scanline.subtle .scanline-wire { opacity: 0.12; }
+  .scanline.subtle .scanline-readout { opacity: 0.2; }
+
+  /* Active state: line clear, readouts legible */
+  .scanline.active .scanline-wire { opacity: 0.4; }
+  .scanline.active .scanline-readout { opacity: 0.45; }
+
+  /* Full state: line prominent, readouts clear */
+  .scanline.full .scanline-wire { opacity: 0.7; }
+  .scanline.full .scanline-readout { opacity: 0.7; }
+
+  /* Transition for hover demos */
+  .scanline-hover .scanline-wire,
+  .scanline-hover .scanline-readout {
+    transition: opacity 0.6s ease;
+  }
+  .scanline-hover.rest:hover .scanline-wire { opacity: 0.4; }
+  .scanline-hover.rest:hover .scanline-readout { opacity: 0.45; }
+
+  /* Light background variant */
+  .scanline.on-light .scanline-readout { color: var(--orange); }
+  .scanline.on-dark .scanline-readout { color: var(--orange); }
+
+  /* ── DEMO FRAMES ── */
+  .demo-frame {
+    border-radius: 10px; overflow: hidden;
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .demo-meta {
+    padding: 10px 20px;
+    font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.06em;
+  }
+
+  /* ── SPEC TABLE ── */
+  .spec-grid {
+    display: grid; grid-template-columns: 120px 1fr; gap: 0;
+    border: 1px solid var(--near-white); border-radius: 8px;
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .spec-key {
+    padding: 14px 16px;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    color: var(--orange); letter-spacing: 0.04em;
+    background: var(--near-white);
+    border-bottom: 1px solid var(--pale);
+  }
+  .spec-val {
+    padding: 14px 16px;
+    font-size: 13px; color: var(--mid);
+    border-bottom: 1px solid var(--near-white);
+    line-height: 1.5;
+  }
+  .spec-key:last-of-type, .spec-val:last-of-type { border-bottom: none; }
+
+  /* ── STATE COMPARISON ── */
+  .state-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    margin-bottom: 48px;
+  }
+  .state-card {
+    border-radius: 10px; overflow: hidden;
+    position: relative; min-height: 200px;
+  }
+  .state-label {
+    position: absolute; top: 12px; left: 14px;
+    font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .state-opacity {
+    position: absolute; top: 12px; right: 14px;
+    font-family: var(--font-mono); font-size: 8px;
+  }
+
+  /* ── APPLICATION GRID ── */
+  .app-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 24px; }
+    section { padding: 80px 24px 60px; }
+    .full .inner { padding: 0 24px; }
+    .state-grid { grid-template-columns: 1fr 1fr; }
+    .app-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">THE SCAN LINE — REFINED</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 01: ONE GESTURE                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">01 — One Gesture</div>
+  <h1 class="title">A 1px line and its readouts.</h1>
+  <p class="subtitle">One object. Three parts. A hairline in Ember that spans the full width of its container, with measurement readouts at each endpoint. This is not a divider. This is an instrument reading. It appears at 61.8% height — the golden section — on every composition.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 48px;">
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">THE LINE</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">1px height. Full container width. Ember #F05A10. Opacity varies by state (8% to 70%). Never thicker than 1px on screen, 0.25pt in print.</div>
+    </div>
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">LEFT READOUT</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">Point-cloud format: three floating point values (X Y Z) in JetBrains Mono at 7px. The origin coordinate. Where the measurement begins.</div>
+    </div>
+    <div style="padding: 20px; border-radius: 8px; background: var(--near-white);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 8px;">RIGHT READOUT</div>
+      <div style="font-size: 13px; line-height: 1.55; color: var(--mid);">Scan metadata: reference ID, resolution, timestamp. JetBrains Mono at 7px. The instrument telling you what it measured.</div>
+    </div>
+  </div>
+
+  <!-- The anatomy -->
+  <div style="background: #000; border-radius: 10px; padding: 80px 48px; position: relative; margin-bottom: 16px;">
+    <!-- Annotation lines -->
+    <div style="position: absolute; top: 24px; left: 48px; font-family: var(--font-mono); font-size: 8px; color: rgba(255,255,255,0.15); letter-spacing: 0.06em;">ANATOMY OF THE SCAN LINE</div>
+
+    <!-- Scan line at 61.8% -->
+    <div class="scanline full on-dark" style="top: 61.8%;">
+      <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">
+        271.3 098.1 032.4
+      </div>
+      <div class="scanline-wire"></div>
+      <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">
+        AV-R-2026-0142 / 0.1MM / 14:32:07
+      </div>
+    </div>
+
+    <!-- Annotation arrows -->
+    <div style="position: absolute; top: 50%; left: 48px; transform: translateY(-100%);">
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.35); margin-bottom: 4px;">← LEFT READOUT</div>
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(255,255,255,0.12);">XYZ COORDINATE</div>
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(255,255,255,0.12);">POINT-CLOUD FORMAT</div>
+    </div>
+    <div style="position: absolute; top: 50%; right: 48px; transform: translateY(-100%); text-align: right;">
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.35); margin-bottom: 4px;">RIGHT READOUT →</div>
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(255,255,255,0.12);">SCAN REFERENCE</div>
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(255,255,255,0.12);">RESOLUTION / TIMESTAMP</div>
+    </div>
+
+    <!-- Golden ratio annotation -->
+    <div style="position: absolute; right: 48px; bottom: 20px; text-align: right;">
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(240,90,16,0.25);">POSITION: 61.8%</div>
+      <div style="font-family: var(--font-mono); font-size: 7px; color: rgba(255,255,255,0.1);">GOLDEN SECTION</div>
+    </div>
+  </div>
+  <div style="font-size: 12px; color: var(--light); margin-bottom: 48px;">Hover the demos below to see the line respond.</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 02: FOUR STATES                                 -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid var(--near-white);">
+  <div class="label">02 — Four States</div>
+  <h1 class="title">Opacity is the volume knob.</h1>
+  <p class="subtitle">The scan line has exactly four states. Each state has fixed opacity values for both line and readouts. No ranges. No "approximately." The system is the system.</p>
+
+  <div class="state-grid">
+    <!-- REST -->
+    <div class="state-card" style="background: #000;">
+      <div class="state-label" style="color: rgba(255,255,255,0.2);">REST</div>
+      <div class="state-opacity" style="color: rgba(240,90,16,0.2);">8%</div>
+      <div class="scanline rest on-dark" style="top: 61.8%;">
+        <div class="scanline-readout scanline-readout-left" style="margin-left: 14px;">271.3 098.1 032.4</div>
+        <div class="scanline-wire"></div>
+        <div class="scanline-readout scanline-readout-right" style="margin-right: 14px;">AV-R-0142</div>
+      </div>
+    </div>
+
+    <!-- SUBTLE -->
+    <div class="state-card" style="background: #000;">
+      <div class="state-label" style="color: rgba(255,255,255,0.25);">SUBTLE</div>
+      <div class="state-opacity" style="color: rgba(240,90,16,0.3);">12%</div>
+      <div class="scanline subtle on-dark" style="top: 61.8%;">
+        <div class="scanline-readout scanline-readout-left" style="margin-left: 14px;">271.3 098.1 032.4</div>
+        <div class="scanline-wire"></div>
+        <div class="scanline-readout scanline-readout-right" style="margin-right: 14px;">AV-R-0142</div>
+      </div>
+    </div>
+
+    <!-- ACTIVE -->
+    <div class="state-card" style="background: #000;">
+      <div class="state-label" style="color: rgba(255,255,255,0.35);">ACTIVE</div>
+      <div class="state-opacity" style="color: rgba(240,90,16,0.5);">40%</div>
+      <div class="scanline active on-dark" style="top: 61.8%;">
+        <div class="scanline-readout scanline-readout-left" style="margin-left: 14px;">271.3 098.1 032.4</div>
+        <div class="scanline-wire"></div>
+        <div class="scanline-readout scanline-readout-right" style="margin-right: 14px;">AV-R-0142</div>
+      </div>
+    </div>
+
+    <!-- FULL -->
+    <div class="state-card" style="background: #000;">
+      <div class="state-label" style="color: rgba(255,255,255,0.5);">FULL</div>
+      <div class="state-opacity" style="color: var(--orange);">70%</div>
+      <div class="scanline full on-dark" style="top: 61.8%;">
+        <div class="scanline-readout scanline-readout-left" style="margin-left: 14px;">271.3 098.1 032.4</div>
+        <div class="scanline-wire"></div>
+        <div class="scanline-readout scanline-readout-right" style="margin-right: 14px;">AV-R-0142</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spec table -->
+  <div class="spec-grid">
+    <div class="spec-key">REST</div>
+    <div class="spec-val"><strong>Line 8%</strong> / Readouts hidden. Default state. The line is barely perceptible. A shadow of measurement. Used on backgrounds, ambient environments, resting UI.</div>
+    <div class="spec-key">SUBTLE</div>
+    <div class="spec-val"><strong>Line 12% / Readouts 20%</strong>. The line is visible if you look for it. Readouts appear as ghost text. Documents, secondary layouts, print materials with limited color.</div>
+    <div class="spec-key">ACTIVE</div>
+    <div class="spec-val"><strong>Line 40% / Readouts 45%</strong>. The line is clearly present. Readouts are legible at close distance. Hero sections, key moments, hover/focus states on digital.</div>
+    <div class="spec-key">FULL</div>
+    <div class="spec-val"><strong>Line 70% / Readouts 70%</strong>. Maximum intensity. Reserved for signal moments only: cover pages, hero slides, the scan report header. Never more than once per view.</div>
+  </div>
+
+  <div style="background: var(--near-white); border-radius: 8px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px;">
+    <div style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--orange); flex-shrink: 0; margin-top: 2px;">RULE</div>
+    <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Never above 70% opacity. The scan line is never fully opaque. It is always a trace, never a border. At 100% it becomes a divider. At 70% it remains an instrument.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 03: THE READOUT FORMAT                          -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid var(--near-white);">
+  <div class="label">03 — Readout Format</div>
+  <h1 class="title">Real data. Real format.</h1>
+  <p class="subtitle">The readouts follow the format of actual 3D scanner output. This is not decoration. If someone who works with point clouds sees it, it should look correct.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 48px;">
+    <!-- Left readout -->
+    <div style="background: #000; border-radius: 10px; padding: 32px;">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 20px;">LEFT READOUT — COORDINATE</div>
+      <div style="font-family: var(--font-mono); font-size: 28px; color: #fff; letter-spacing: 0.04em; margin-bottom: 24px;">
+        <span style="opacity: 0.4;">271.3</span> <span style="opacity: 0.4;">098.1</span> <span style="opacity: 0.4;">032.4</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">X</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">Foot length axis, mm</div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">Y</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">Foot width axis, mm</div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">Z</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">Height axis, mm</div>
+        </div>
+      </div>
+      <div style="margin-top: 20px; font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.15); line-height: 1.6;">
+        FORMAT: XXX.X YYY.Y ZZZ.Z<br>
+        PADDING: Leading zeros to 3 digits<br>
+        PRECISION: 1 decimal place<br>
+        SEPARATOR: Space (not comma)
+      </div>
+    </div>
+
+    <!-- Right readout -->
+    <div style="background: #000; border-radius: 10px; padding: 32px;">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 20px;">RIGHT READOUT — METADATA</div>
+      <div style="font-family: var(--font-mono); font-size: 28px; color: #fff; letter-spacing: 0.02em; margin-bottom: 24px;">
+        <span style="opacity: 0.4; font-size: 18px;">AV-R-2026-0142 / 0.1MM / 14:32:07</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">REF ID</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">AV-[L/R]-[YYYY]-[NNNN]</div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">RES</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">Scanner resolution in mm</div>
+        </div>
+        <div>
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(240,90,16,0.4); margin-bottom: 4px;">TIME</div>
+          <div style="font-size: 12px; color: rgba(255,255,255,0.35);">24h scan timestamp</div>
+        </div>
+      </div>
+      <div style="margin-top: 20px; font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.15); line-height: 1.6;">
+        AV = Alveon<br>
+        L/R = Left/Right foot<br>
+        YYYY = Year<br>
+        NNNN = Sequential scan number
+      </div>
+    </div>
+  </div>
+
+  <!-- Abbreviated forms -->
+  <div style="padding: 24px; border-radius: 8px; border: 1px solid var(--near-white); margin-bottom: 24px;">
+    <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.1em; margin-bottom: 16px;">ABBREVIATED FORMS</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
+      <div>
+        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">Full</div>
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--mid);">271.3 098.1 032.4 — AV-R-2026-0142 / 0.1MM / 14:32:07</div>
+        <div style="font-size: 11px; color: var(--light); margin-top: 4px;">Hero sections, covers, scan reports</div>
+      </div>
+      <div>
+        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">Medium</div>
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--mid);">271.3 098.1 032.4 — AV-R-0142</div>
+        <div style="font-size: 11px; color: var(--light); margin-top: 4px;">Documents, pitch decks, cards</div>
+      </div>
+      <div>
+        <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">Minimal</div>
+        <div style="font-family: var(--font-mono); font-size: 10px; color: var(--mid);">271.3 — 0142</div>
+        <div style="font-size: 11px; color: var(--light); margin-top: 4px;">Business cards, labels, small formats</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 04: ON DARK — APPLICATIONS                      -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full" style="background: #000; padding: 120px 0;">
+  <div class="inner">
+    <div class="label" style="color: var(--orange);">04 — Applications, Dark</div>
+    <h1 class="title" style="color: #fff;">On dark backgrounds.</h1>
+    <p class="subtitle" style="color: rgba(255,255,255,0.4);">Hover each demo to see the scan line transition from rest to active.</p>
+
+    <div class="app-grid">
+      <!-- WEBSITE HERO -->
+      <div class="demo-frame" style="background: var(--dark); min-height: 400px;">
+        <div style="padding: 48px; position: relative; min-height: 400px;">
+          <!-- Scan line -->
+          <div class="scanline scanline-hover rest on-dark" style="top: 61.8%;">
+            <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">271.3 098.1 032.4</div>
+            <div class="scanline-wire"></div>
+            <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-R-2026-0142 / 0.1MM / 14:32:07</div>
+          </div>
+          <!-- Content -->
+          <div style="position: relative; z-index: 1;">
+            <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 24px;">ENGINEERED FOR ONE</div>
+            <div style="font-weight: 900; font-size: 42px; color: #fff; line-height: 1.06; margin-bottom: 20px;">The first made-to-<br>measure football boot.</div>
+            <div style="font-size: 15px; color: rgba(255,255,255,0.35); max-width: 400px; line-height: 1.6;">3D scanning. Biomechanical research.<br>Digital manufacturing. Built for one.</div>
+          </div>
+        </div>
+        <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">WEBSITE HERO / State: rest → active on hover</div>
+      </div>
+
+      <!-- PITCH DECK STAT -->
+      <div class="demo-frame" style="background: #000; min-height: 400px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="padding: 48px; position: relative; min-height: 400px; display: flex; align-items: center;">
+          <!-- Scan line -->
+          <div class="scanline active on-dark" style="top: 61.8%;">
+            <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">186.7 102.3 028.9</div>
+            <div class="scanline-wire"></div>
+            <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-L-2026-0089</div>
+          </div>
+          <div style="position: relative; z-index: 1;">
+            <div style="font-weight: 900; font-size: 96px; color: var(--orange); line-height: 1; margin-bottom: 12px;">76%</div>
+            <div style="font-size: 16px; color: rgba(255,255,255,0.4); line-height: 1.5;">of professional footballers experience<br>discomfort in the heel region.</div>
+            <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.12); margin-top: 20px;">SOURCE: ISEA 2024 / LOUGHBOROUGH UNIVERSITY</div>
+          </div>
+        </div>
+        <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">PITCH DECK / State: active / medium readout</div>
+      </div>
+
+      <!-- BUSINESS CARD FRONT -->
+      <div class="demo-frame" style="background: #000; min-height: 260px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="padding: 32px; position: relative; min-height: 260px; display: flex; flex-direction: column; justify-content: space-between;">
+          <!-- Scan line -->
+          <div class="scanline subtle on-dark" style="top: 61.8%;">
+            <div class="scanline-readout scanline-readout-left" style="margin-left: 32px;">271.3</div>
+            <div class="scanline-wire"></div>
+            <div class="scanline-readout scanline-readout-right" style="margin-right: 32px;">0142</div>
+          </div>
+          <div style="position: relative; z-index: 1;">
+            <div style="font-weight: 900; font-size: 15px; letter-spacing: 0.06em; color: #fff;">ALVEON</div>
+          </div>
+          <div style="position: relative; z-index: 1;">
+            <div style="font-weight: 600; font-size: 13px; color: #fff;">Jurgen Beltz</div>
+            <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.3); margin-top: 3px;">CO-FOUNDER / CEO</div>
+            <div style="font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.2); margin-top: 12px; line-height: 1.8;">jurgen@alveon.com<br>alveon.com</div>
+          </div>
+        </div>
+        <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">BUSINESS CARD / State: subtle / minimal readout</div>
+      </div>
+
+      <!-- SCAN REPORT HEADER -->
+      <div class="demo-frame" style="background: #000; min-height: 260px; border: 1px solid rgba(255,255,255,0.04);">
+        <div style="padding: 32px; position: relative; min-height: 260px; display: flex; flex-direction: column; justify-content: center;">
+          <!-- Scan line at full -->
+          <div class="scanline full on-dark" style="top: 61.8%;">
+            <div class="scanline-readout scanline-readout-left" style="margin-left: 32px;">271.3 098.1 032.4</div>
+            <div class="scanline-wire"></div>
+            <div class="scanline-readout scanline-readout-right" style="margin-right: 32px;">AV-R-2026-0142 / 0.1MM / 14:32:07</div>
+          </div>
+          <div style="position: relative; z-index: 1;">
+            <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 12px;">SCAN REPORT</div>
+            <div style="font-weight: 900; font-size: 28px; color: #fff; margin-bottom: 6px;">Right Foot</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 8px;">2026.02.20 / HAMBURG / PERFORMANCE CENTER 001</div>
+          </div>
+        </div>
+        <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">SCAN REPORT / State: full / full readout</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 05: ON LIGHT — APPLICATIONS                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">05 — Applications, Light</div>
+  <h1 class="title">On light backgrounds.</h1>
+  <p class="subtitle">Same system, same rules. The scan line works identically on light backgrounds. The Ember is muted against warm sand tones but still present.</p>
+
+  <div class="app-grid">
+    <!-- Document page -->
+    <div class="demo-frame" style="background: var(--white); border: 1px solid var(--pale); min-height: 400px;">
+      <div style="padding: 48px; position: relative; min-height: 400px;">
+        <div class="scanline subtle on-light" style="top: 61.8%;">
+          <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">271.3 098.1 032.4</div>
+          <div class="scanline-wire"></div>
+          <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-R-2026-0142</div>
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 20px;">BRAND FOUNDATION</div>
+          <div style="font-weight: 900; font-size: 32px; color: var(--dark); line-height: 1.1; margin-bottom: 16px;">Every foot is different.<br>Every boot should be too.</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.65; max-width: 420px; margin-top: 24px;">Athletes push their bodies to the limit. They train in the dark, play through pain, and dedicate years to a sport that demands everything. They deserve equipment that is built for exactly their body.</div>
+        </div>
+      </div>
+      <div class="demo-meta" style="background: var(--near-white); color: var(--light);">A4 DOCUMENT / State: subtle</div>
+    </div>
+
+    <!-- Data card on near-white -->
+    <div class="demo-frame" style="background: var(--near-white); min-height: 400px;">
+      <div style="padding: 48px; position: relative; min-height: 400px; display: flex; flex-direction: column; justify-content: center;">
+        <div class="scanline scanline-hover rest on-light" style="top: 61.8%;">
+          <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">186.7 102.3 028.9</div>
+          <div class="scanline-wire"></div>
+          <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-L-2026-0089</div>
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">3D SCANNING</div>
+          <div style="font-weight: 900; font-size: 24px; color: var(--dark); margin-bottom: 8px;">Complete foot geometry.</div>
+          <div style="font-size: 14px; color: var(--mid); line-height: 1.6; max-width: 380px;">The Elinvision S3DT captures the entire foot surface in 12 seconds. Including the plantar region most scanners interpolate.</div>
+          <div style="display: grid; grid-template-columns: repeat(3, auto); gap: 32px; margin-top: 24px;">
+            <div>
+              <div style="font-weight: 900; font-size: 24px; color: var(--dark);">12s</div>
+              <div style="font-family: var(--font-mono); font-size: 8px; color: var(--light); letter-spacing: 0.06em;">SCAN TIME</div>
+            </div>
+            <div>
+              <div style="font-weight: 900; font-size: 24px; color: var(--dark);">0.1mm</div>
+              <div style="font-family: var(--font-mono); font-size: 8px; color: var(--light); letter-spacing: 0.06em;">RESOLUTION</div>
+            </div>
+            <div>
+              <div style="font-weight: 900; font-size: 24px; color: var(--dark);">360°</div>
+              <div style="font-family: var(--font-mono); font-size: 8px; color: var(--light); letter-spacing: 0.06em;">COVERAGE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="demo-meta" style="background: rgba(0,0,0,0.03); color: var(--light);">WEBSITE CARD / State: rest → active on hover</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 06: THE RULES                                   -->
+<!-- ═══════════════════════════════════════════════ -->
+<section class="full" style="background: var(--near-white); padding: 120px 0;">
+  <div class="inner">
+    <div class="label">06 — The Rules</div>
+    <h1 class="title">Non-negotiable.</h1>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 40px;">
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">POSITION</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">61.8% from the top.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">The golden section. Not 60%. Not 65%. Not "somewhere in the lower third." This is a fixed coordinate, not a suggestion. When the container changes size, the line moves proportionally.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">THICKNESS</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">1px on screen. 0.25pt in print.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Never thicker. At 2x displays, 1px renders as a hairline. At 1x, it may anti-alias slightly. This is fine. The thinness is the point. A laser, not a border.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">SPAN</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">Full width. Always.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">The line runs edge to edge of its container. It never starts or stops in the middle. It never has rounded ends. It passes behind content, beneath images, through everything. Uninterrupted.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">QUANTITY</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">One per composition.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">One scan line per page, per slide, per screen, per card. Never two. Never stacked. If you need to divide content, use the regular grey rules from the color system. The scan line is reserved.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">COLOR</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">Ember only. #F05A10.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">The line is always Ember. On dark backgrounds, on light backgrounds, on images. Opacity changes. Hue never does. The scan line is the scan line is the scan line.</div>
+      </div>
+      <div style="background: var(--white); border-radius: 10px; padding: 28px; border: 1px solid var(--pale);">
+        <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">READOUTS</div>
+        <div style="font-weight: 700; font-size: 15px; margin-bottom: 6px;">Optional but formatted.</div>
+        <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Readouts may be omitted when the format doesn't allow it (favicons, very small labels). When present, they follow the format spec exactly. Left: coordinate. Right: metadata. Never reversed. Never other content.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 07: THE LINE GOES THROUGH                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid var(--near-white);">
+  <div class="label">07 — Compositional Rule</div>
+  <h1 class="title">The line goes through. Always.</h1>
+  <p class="subtitle">The scan line does not avoid content. It does not stop at headlines. It does not skip images. A scanner measures at a fixed coordinate, regardless of what is in its path. The designer composes around the line, not the other way around.</p>
+
+  <div class="app-grid" style="margin-bottom: 32px;">
+    <!-- Line through headline -->
+    <div class="demo-frame" style="background: var(--dark); min-height: 360px;">
+      <div style="padding: 48px; position: relative; min-height: 360px; display: flex; align-items: center;">
+        <div class="scanline active on-dark" style="top: 61.8%;">
+          <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">271.3 098.1 032.4</div>
+          <div class="scanline-wire"></div>
+          <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-R-2026-0142</div>
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.14em; margin-bottom: 24px;">ENGINEERED FOR ONE</div>
+          <div style="font-weight: 900; font-size: 52px; color: #fff; line-height: 1.06;">Every foot<br>is different.</div>
+        </div>
+      </div>
+      <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">LINE THROUGH TEXT — The line crosses the descender space between lines. Content is composed so that 61.8% falls in a natural gap.</div>
+    </div>
+
+    <!-- Line through image area -->
+    <div class="demo-frame" style="background: #000; min-height: 360px; border: 1px solid rgba(255,255,255,0.04);">
+      <div style="padding: 48px; position: relative; min-height: 360px;">
+        <div class="scanline active on-dark" style="top: 61.8%;">
+          <div class="scanline-readout scanline-readout-left" style="margin-left: 48px;">186.7 102.3 028.9</div>
+          <div class="scanline-wire"></div>
+          <div class="scanline-readout scanline-readout-right" style="margin-right: 48px;">AV-L-2026-0089</div>
+        </div>
+        <!-- Simulated image placeholder -->
+        <div style="position: absolute; top: 32px; right: 48px; width: 200px; height: 280px; background: var(--dark); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+          <div style="font-family: var(--font-mono); font-size: 8px; color: rgba(255,255,255,0.1); text-align: center; letter-spacing: 0.06em;">FOOT SCAN<br>IMAGE</div>
+        </div>
+        <div style="position: relative; z-index: 1; max-width: 55%;">
+          <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 16px;">3D SCANNING</div>
+          <div style="font-weight: 900; font-size: 28px; color: #fff; line-height: 1.1; margin-bottom: 12px;">Complete geometry.</div>
+          <div style="font-size: 14px; color: rgba(255,255,255,0.35); line-height: 1.6;">The line passes through the image. It does not stop at the edge. The scan does not care about composition.</div>
+        </div>
+      </div>
+      <div class="demo-meta" style="background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.15);">LINE THROUGH IMAGE — Uninterrupted. The line passes behind and through all content layers.</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+    <div style="background: var(--near-white); border-radius: 10px; padding: 28px;">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">THE DESIGNER'S JOB</div>
+      <div style="font-size: 14px; line-height: 1.65; color: var(--mid);">The line is fixed. The content is flexible. When building a layout, the designer knows: at 61.8% of the container height, the scan line will appear. Headlines, body text, and images are composed so that this coordinate falls in a natural gap — between lines of text, between content blocks, or across an image where it reinforces the composition. The line does not move. The content adapts.</div>
+    </div>
+    <div style="background: var(--near-white); border-radius: 10px; padding: 28px;">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 12px;">THE EXCEPTION</div>
+      <div style="font-size: 14px; line-height: 1.65; color: var(--mid);">At Rest state (8%), the line is invisible enough to cross directly through a word without affecting legibility. This is acceptable and even desirable — it creates the moment of discovery when someone notices the faint orange trace cutting through a headline. At Active and Full states, the designer must compose around it. The higher the intensity, the more the layout must respect the coordinate.</div>
+    </div>
+  </div>
+
+  <div style="background: var(--near-white); border-radius: 8px; padding: 20px 24px; display: flex; align-items: flex-start; gap: 16px;">
+    <div style="font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--orange); flex-shrink: 0; margin-top: 2px;">WHY</div>
+    <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">This is the rule that makes the system interesting. Not the color. Not the typography. A fixed compositional constraint that forces every layout to think differently. It's the equivalent of a scanner that measures at a fixed height — the world arranges itself around the instrument, not the other way around.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 08: PRINT BEHAVIOR                              -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">08 — Print Behavior</div>
+  <h1 class="title">On paper, the line is physical.</h1>
+  <p class="subtitle">In print, the scan line can be produced as a spot varnish, a deboss, or a foil line instead of a printed color. This gives the line a physical dimension — you can feel it. The measurement becomes tactile.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+    <div style="padding: 24px; border-radius: 10px; border: 1px solid var(--pale);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 10px;">SPOT VARNISH</div>
+      <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Gloss varnish on matte stock. Visible only at certain angles. The most subtle option. Like finding a hidden measurement on a surface.</div>
+    </div>
+    <div style="padding: 24px; border-radius: 10px; border: 1px solid var(--pale);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 10px;">DEBOSS</div>
+      <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Blind deboss (no ink). A physical line pressed into the paper. You feel it before you see it. Best for business cards and premium documents.</div>
+    </div>
+    <div style="padding: 24px; border-radius: 10px; border: 1px solid var(--pale);">
+      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--orange); letter-spacing: 0.08em; margin-bottom: 10px;">EMBER FOIL</div>
+      <div style="font-size: 13px; line-height: 1.6; color: var(--mid);">Matte orange foil stamping. The most visible print option. Reserved for covers and signal moments. The foil catches light like a laser catches the eye.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div style="background: #000; padding: 48px;">
+  <div style="max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <span style="font-weight: 900; font-size: 12px; letter-spacing: 0.06em; color: var(--orange);">ALVEON</span>
+      <span style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.25); margin-left: 16px;">The Scan Line v2.0</span>
+    </div>
+    <div style="font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.2);">February 2026 &middot; Confidential</div>
+  </div>
+</div>
+
+</body>
+</html>
