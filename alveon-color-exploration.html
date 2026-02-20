@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Color Exploration</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: var(--font-display); background: #ffffff; color: #1A1A1A; -webkit-font-smoothing: antialiased; }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-wordmark { font-weight: 800; font-size: 14px; letter-spacing: 0.1em; color: #1A1A1A; }
+  .nav-doc { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #FF5A00; }
+
+  section { padding: 100px 48px 80px; max-width: 1100px; margin: 0 auto; }
+  section:first-of-type { padding-top: 120px; }
+
+  .full { max-width: 100%; }
+  .full .inner { max-width: 1100px; margin: 0 auto; padding: 0 48px; }
+
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: #FF5A00; margin-bottom: 24px; }
+  .title { font-weight: 800; font-size: clamp(26px, 3.5vw, 38px); line-height: 1.1; margin-bottom: 12px; }
+  .subtitle { font-weight: 400; font-size: 15px; line-height: 1.65; color: #666; max-width: 680px; margin-bottom: 48px; }
+
+  /* ── ORANGE CANDIDATES ── */
+  .orange-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .orange-card {
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+  }
+  .orange-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+  .orange-card.selected { box-shadow: 0 0 0 3px #1A1A1A, 0 8px 24px rgba(0,0,0,0.15); transform: translateY(-2px); }
+  .orange-card.selected::after {
+    content: '✓'; position: absolute; top: 12px; right: 12px;
+    width: 22px; height: 22px; background: #1A1A1A; color: #fff;
+    border-radius: 50%; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .orange-swatch {
+    height: 140px;
+    display: flex; align-items: flex-end; padding: 16px;
+  }
+  .orange-swatch-name {
+    font-weight: 700; font-size: 13px; color: rgba(255,255,255,0.9);
+  }
+  .orange-info {
+    padding: 14px 16px;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+  }
+  .orange-hex {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: #1A1A1A;
+    margin-bottom: 4px;
+  }
+  .orange-desc {
+    font-family: var(--font-mono); font-size: 9px; color: #999; letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .orange-specs {
+    font-family: var(--font-mono); font-size: 9px; color: #bbb; margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  /* ── PREVIEW STAGE ── */
+  .preview-stage {
+    margin-top: 48px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+  }
+  .preview-tabs {
+    display: flex;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .preview-tab {
+    padding: 12px 24px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #999;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .preview-tab:hover { color: #666; }
+  .preview-tab.active { color: #1A1A1A; border-bottom-color: var(--active-orange, #FF5A00); }
+  .preview-panel { display: none; }
+  .preview-panel.active { display: block; }
+
+  /* Dark preview */
+  .prev-dark {
+    background: #1A1A1A;
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+  .prev-dark-left .prev-label {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 20px;
+  }
+  .prev-dark-left .prev-headline {
+    font-weight: 800; font-size: 32px; color: #fff; margin-bottom: 12px; line-height: 1.1;
+  }
+  .prev-dark-left .prev-body {
+    font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.5); margin-bottom: 24px;
+  }
+  .prev-dark-left .prev-cta {
+    display: inline-block; border: 1px solid #fff; padding: 8px 20px;
+    font-family: var(--font-mono); font-size: 10px; color: #fff; letter-spacing: 0.06em;
+  }
+  .prev-dark-right {
+    display: flex; flex-direction: column; justify-content: center; gap: 16px;
+  }
+  .prev-stat-number {
+    font-weight: 800; font-size: 48px; line-height: 1;
+  }
+  .prev-stat-text {
+    font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.4;
+  }
+
+  /* Light preview */
+  .prev-light {
+    background: #fff;
+    padding: 48px;
+  }
+  .prev-light-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .prev-light-wordmark { font-weight: 800; font-size: 14px; letter-spacing: 0.1em; }
+  .prev-light-nav { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; display: flex; gap: 24px; }
+  .prev-light-nav span { cursor: default; }
+  .prev-light-content { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .prev-card-item { padding: 24px; border-radius: 8px; }
+  .prev-card-label {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .prev-card-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .prev-card-body { font-size: 13px; line-height: 1.55; }
+  .prev-card-meta { font-family: var(--font-mono); font-size: 10px; margin-top: 12px; }
+
+  /* Wordmark preview */
+  .prev-wordmark {
+    display: grid; grid-template-columns: 1fr 1fr;
+    min-height: 280px;
+  }
+  .prev-wm-dark {
+    background: #000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px;
+    gap: 12px;
+  }
+  .prev-wm-light {
+    background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px;
+    gap: 12px;
+    border-left: 1px solid #f0f0f0;
+  }
+  .prev-wm-word { font-weight: 800; font-size: 32px; letter-spacing: 0.1em; }
+  .prev-wm-tag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; }
+  .prev-wm-sub { font-weight: 700; font-size: 14px; }
+
+  /* ── GREY PALETTES ── */
+  .grey-palette-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  .grey-palette-card {
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    border: 1px solid #f0f0f0;
+  }
+  .grey-palette-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .grey-palette-card.selected { box-shadow: 0 0 0 3px #1A1A1A, 0 8px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
+  .grey-palette-card.selected::after {
+    content: '✓'; position: absolute; top: 12px; right: 12px;
+    width: 22px; height: 22px; background: #1A1A1A; color: #fff;
+    border-radius: 50%; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+  .grey-palette-header {
+    padding: 20px 20px 12px;
+    background: #fff;
+  }
+  .grey-palette-name {
+    font-weight: 700; font-size: 15px; margin-bottom: 4px;
+  }
+  .grey-palette-desc {
+    font-family: var(--font-mono); font-size: 9px; color: #999;
+    letter-spacing: 0.03em; line-height: 1.4;
+  }
+  .grey-strip-mini {
+    display: flex; height: 48px;
+  }
+  .grey-strip-mini div { flex: 1; }
+  .grey-palette-detail {
+    padding: 16px 20px;
+    background: #fafafa;
+    border-top: 1px solid #f0f0f0;
+  }
+  .grey-detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0;
+  }
+  .grey-detail-name {
+    font-size: 11px; font-weight: 500;
+  }
+  .grey-detail-hex {
+    font-family: var(--font-mono); font-size: 10px; color: #999;
+  }
+  .grey-detail-dot {
+    width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-right: 8px;
+    display: inline-block; vertical-align: middle;
+  }
+
+  /* ── GREY PREVIEW ── */
+  .grey-preview-stage {
+    margin-top: 40px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #f0f0f0;
+  }
+  .grey-preview-inner {
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+  .grey-prev-text h3 {
+    font-weight: 800; font-size: 24px; margin-bottom: 12px;
+  }
+  .grey-prev-text p {
+    font-size: 14px; line-height: 1.65; margin-bottom: 8px;
+  }
+  .grey-prev-text .meta {
+    font-family: var(--font-mono); font-size: 10px; margin-top: 16px;
+  }
+  .grey-prev-card {
+    border-radius: 8px; padding: 32px; display: flex; flex-direction: column; justify-content: space-between; min-height: 240px;
+  }
+  .grey-prev-card .card-label {
+    font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px;
+  }
+  .grey-prev-card .card-title {
+    font-weight: 800; font-size: 20px; margin-bottom: 8px;
+  }
+  .grey-prev-card .card-body {
+    font-size: 13px; line-height: 1.6;
+  }
+  .grey-prev-card .card-meta {
+    font-family: var(--font-mono); font-size: 10px; margin-top: auto; padding-top: 16px;
+  }
+
+  /* ── COMBINED PREVIEW ── */
+  .combined-preview {
+    margin-top: 48px;
+    border-radius: 12px;
+    overflow: hidden;
+    min-height: 400px;
+  }
+  .combined-inner {
+    padding: 64px 48px;
+  }
+  .combined-label {
+    font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 24px;
+  }
+  .combined-headline {
+    font-weight: 800; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin-bottom: 16px;
+  }
+  .combined-body {
+    font-size: 15px; line-height: 1.65; max-width: 600px; margin-bottom: 32px;
+  }
+  .combined-footer {
+    display: flex; align-items: center; gap: 24px; margin-top: 48px;
+    padding-top: 20px;
+  }
+  .combined-wordmark { font-weight: 800; font-size: 13px; letter-spacing: 0.1em; }
+  .combined-tag { font-weight: 700; font-size: 13px; }
+  .combined-meta { font-family: var(--font-mono); font-size: 10px; }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 24px; }
+    section { padding: 80px 24px 60px; }
+    .full .inner { padding: 0 24px; }
+    .orange-grid { grid-template-columns: repeat(3, 1fr); }
+    .grey-palette-grid { grid-template-columns: 1fr; }
+    .prev-dark, .prev-light-content, .grey-preview-inner { grid-template-columns: 1fr; }
+    .prev-wordmark { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">COLOR EXPLORATION</span>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 1: ORANGE CANDIDATES                    -->
+<!-- ═══════════════════════════════════════════════ -->
+<section>
+  <div class="label">01 — Orange Candidates</div>
+  <h1 class="title">Six options. One signal.</h1>
+  <p class="subtitle">Click any swatch to preview it across touchpoints. The current orange (#FF5A00) is pre-selected. We're looking at hue shifts (warmer vs cooler), saturation levels, and how each behaves on dark and light backgrounds.</p>
+
+  <div class="orange-grid" id="orangeGrid">
+    <!-- Generated by JS -->
+  </div>
+
+  <!-- Preview stage -->
+  <div class="preview-stage" id="orangePreview">
+    <div class="preview-tabs">
+      <div class="preview-tab active" data-tab="dark">Dark Background</div>
+      <div class="preview-tab" data-tab="light">Light Background</div>
+      <div class="preview-tab" data-tab="wordmark">Wordmark</div>
+    </div>
+    <div class="preview-panel active" data-panel="dark">
+      <div class="prev-dark" id="prevDark">
+        <div class="prev-dark-left">
+          <div class="prev-label" id="pdLabel">ENGINEERED FOR ONE</div>
+          <div class="prev-headline">The first made-to-measure football boot.</div>
+          <div class="prev-body">We use 3D scanning, biomechanical research, and digital manufacturing to construct a shoe that fits exactly one player's foot.</div>
+          <div class="prev-cta">LEARN MORE</div>
+        </div>
+        <div class="prev-dark-right">
+          <div>
+            <div class="prev-stat-number" id="pdStat">76%</div>
+            <div class="prev-stat-text">of footballers experience<br>heel discomfort</div>
+          </div>
+          <div style="margin-top: 16px;">
+            <div id="pdBar" style="height: 3px; width: 100%; border-radius: 2px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="preview-panel" data-panel="light">
+      <div class="prev-light" id="prevLight">
+        <div class="prev-light-header">
+          <div class="prev-light-wordmark" id="plWordmark">ALVEON</div>
+          <div class="prev-light-nav">
+            <span style="color: #1A1A1A;">Technology</span>
+            <span style="color: #999;">Athletes</span>
+            <span style="color: #999;">Research</span>
+            <span id="plNavActive">About</span>
+          </div>
+        </div>
+        <div class="prev-light-content">
+          <div class="prev-card-item" id="plCard1" style="background: #f5f5f5;">
+            <div class="prev-card-label" id="plCardLabel1">3D SCANNING</div>
+            <div class="prev-card-title" style="color: #1A1A1A;">Complete foot geometry</div>
+            <div class="prev-card-body" style="color: #666;">Every surface measured. Including the plantar region most scanners miss.</div>
+            <div class="prev-card-meta" id="plCardMeta1">12 SECONDS PER SCAN</div>
+          </div>
+          <div class="prev-card-item" id="plCard2" style="background: #f5f5f5;">
+            <div class="prev-card-label" id="plCardLabel2">BIOMECHANICS</div>
+            <div class="prev-card-title" style="color: #1A1A1A;">Pressure mapping</div>
+            <div class="prev-card-body" style="color: #666;">Dynamic load analysis under game conditions. Not standing still.</div>
+            <div class="prev-card-meta" id="plCardMeta2">240 HZ SAMPLING</div>
+          </div>
+          <div class="prev-card-item" id="plCard3" style="background: #f5f5f5;">
+            <div class="prev-card-label" id="plCardLabel3">CONSTRUCTION</div>
+            <div class="prev-card-title" style="color: #1A1A1A;">3D knit + 3D print</div>
+            <div class="prev-card-body" style="color: #666;">Mono-material TPU. Adhesive-free. Fully recyclable.</div>
+            <div class="prev-card-meta" id="plCardMeta3">ONE MATERIAL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="preview-panel" data-panel="wordmark">
+      <div class="prev-wordmark" id="prevWordmark">
+        <div class="prev-wm-dark">
+          <div class="prev-wm-word" id="pwWord1" style="color: #fff;">ALVEON</div>
+          <div class="prev-wm-tag" id="pwTag1">ENGINEERED FOR ONE</div>
+          <div class="prev-wm-sub" style="color: rgba(255,255,255,0.35); margin-top: 24px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;">ORANGE ON BLACK</div>
+        </div>
+        <div class="prev-wm-light">
+          <div class="prev-wm-word" id="pwWord2">ALVEON</div>
+          <div class="prev-wm-tag" id="pwTag2" style="color: #999;">ENGINEERED FOR ONE</div>
+          <div class="prev-wm-sub" style="color: #ccc; margin-top: 24px; font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.08em;">DARK ON WHITE + ORANGE ACCENT</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 2: GREY PALETTES                        -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid #f0f0f0;">
+  <div class="label">02 — Grey Temperature</div>
+  <h1 class="title">Neutral, warm, or warmer.</h1>
+  <p class="subtitle">The current greys are pure neutral (0° hue). Warmer options add a subtle brown or amber undertone that feels more human and less clinical. Click to compare.</p>
+
+  <div class="grey-palette-grid" id="greyGrid">
+    <!-- Generated by JS -->
+  </div>
+
+  <div class="grey-preview-stage" id="greyPreviewStage">
+    <div class="grey-preview-inner" id="greyPreviewInner">
+      <div class="grey-prev-text" id="greyPrevText">
+        <h3>Every foot is different.</h3>
+        <p class="body-text">Athletes push their bodies to the limit. They train in the dark, play through pain, and dedicate years of their lives to a sport that demands everything.</p>
+        <p class="body-text secondary">Fit is where it starts. But the ambition is bigger. Fewer injuries. Better load distribution.</p>
+        <div class="meta">AV-2026-0142 / HAMBURG</div>
+      </div>
+      <div id="greyPrevCard">
+        <div class="grey-prev-card">
+          <div class="card-label" id="gpCardLabel">SCAN REPORT</div>
+          <div class="card-title" id="gpCardTitle">Right Foot</div>
+          <div class="card-body" id="gpCardBody">Foot length 271.3mm. Width 98.1mm. Arch height 32.4mm. Pronation angle 4.2°.</div>
+          <div class="card-meta" id="gpCardMeta">REF: AV-R-2026-0142</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- SECTION 3: COMBINED PREVIEW                     -->
+<!-- ═══════════════════════════════════════════════ -->
+<section style="border-top: 1px solid #f0f0f0; padding-bottom: 120px;">
+  <div class="label">03 — Combined Preview</div>
+  <h1 class="title">Your selections together.</h1>
+  <p class="subtitle">This preview combines the selected orange with the selected grey palette. See how they work as a system.</p>
+
+  <!-- Dark combined -->
+  <div class="combined-preview" id="combinedDark" style="background: #1A1A1A;">
+    <div class="combined-inner">
+      <div class="combined-label" id="cbLabel">ENGINEERED FOR ONE</div>
+      <div class="combined-headline" style="color: #fff;">The football boot is broken. We are here to fix it.</div>
+      <div class="combined-body" id="cbBody">76% of footballers experience discomfort in the heel region alone. Not because they chose wrong. Because the right boot does not exist.</div>
+      <div class="combined-footer" id="cbFooter">
+        <div class="combined-wordmark" id="cbWordmark">ALVEON</div>
+        <div class="combined-tag" style="color: #fff;">Engineered for One.</div>
+        <div class="combined-meta" id="cbMeta">HAMBURG / 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Light combined -->
+  <div class="combined-preview" id="combinedLight" style="background: #fff; border: 1px solid #f0f0f0; margin-top: 24px;">
+    <div class="combined-inner">
+      <div class="combined-label" id="clLabel">WHAT WE ARE SOLVING</div>
+      <div class="combined-headline" id="clHeadline">Every foot is different. Every boot should be.</div>
+      <div class="combined-body" id="clBody">Alveon builds the first made-to-measure football boot in the world. We use 3D scanning, biomechanical research, and digital manufacturing to construct a shoe that fits exactly one player's foot.</div>
+      <div class="combined-footer" id="clFooter">
+        <div class="combined-wordmark" id="clWordmark">ALVEON</div>
+        <div class="combined-tag" id="clTag">Engineered for One.</div>
+        <div class="combined-meta" id="clMeta">v2.0 / February 2026 / Confidential</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+
+const oranges = [
+  {
+    name: 'Current',
+    hex: '#FF5A00',
+    hsl: '21° / 100% / 50%',
+    rgb: '255 / 90 / 0',
+    pantone: '1655 C',
+    desc: 'Pure, saturated, slightly red-leaning. The current Brand Foundation orange.',
+    temp: 'Neutral-warm'
+  },
+  {
+    name: 'Ember',
+    hex: '#F05A10',
+    hsl: '19° / 88% / 50%',
+    rgb: '240 / 90 / 16',
+    pantone: '1665 C',
+    desc: 'Slightly deeper and warmer. Less neon, more substance. Reads well in print.',
+    temp: 'Warm'
+  },
+  {
+    name: 'Torch',
+    hex: '#FF6B1A',
+    hsl: '27° / 100% / 55%',
+    rgb: '255 / 107 / 26',
+    pantone: '1585 C',
+    desc: 'More amber, lighter. Shifts toward classic safety orange. Friendly but less aggressive.',
+    temp: 'Warm-yellow'
+  },
+  {
+    name: 'Blaze',
+    hex: '#E85500',
+    hsl: '22° / 100% / 45%',
+    rgb: '232 / 85 / 0',
+    pantone: '1665 C',
+    desc: 'Darker, more burnt. High contrast on white. Feels mature, less digital.',
+    temp: 'Deep warm'
+  },
+  {
+    name: 'Flare',
+    hex: '#FF4F00',
+    hsl: '19° / 100% / 50%',
+    rgb: '255 / 79 / 0',
+    pantone: '1655 C',
+    desc: 'Redder push. More intensity, more urgency. Closer to international safety orange.',
+    temp: 'Red-warm'
+  },
+  {
+    name: 'Volt',
+    hex: '#FF7020',
+    hsl: '29° / 100% / 56%',
+    rgb: '255 / 112 / 32',
+    pantone: '1505 C',
+    desc: 'Lightest option. High energy, more yellow. Think McLaren papaya territory.',
+    temp: 'Yellow-warm'
+  },
+];
+
+const greys = [
+  {
+    name: 'Neutral (Current)',
+    desc: 'Pure achromatic. 0° hue across the board. Clinical precision.',
+    hue: 'None',
+    colors: [
+      { name: 'Dark',       hex: '#1A1A1A' },
+      { name: 'Mid',        hex: '#666666' },
+      { name: 'Light',      hex: '#999999' },
+      { name: 'Pale',       hex: '#CCCCCC' },
+      { name: 'Near White',  hex: '#F5F5F5' },
+    ]
+  },
+  {
+    name: 'Warm Stone',
+    desc: 'Subtle brown/taupe undertone. Feels more human, less screen-native.',
+    hue: '30° (warm brown)',
+    colors: [
+      { name: 'Dark',       hex: '#1E1B18' },
+      { name: 'Mid',        hex: '#6B6560' },
+      { name: 'Light',      hex: '#9E9690' },
+      { name: 'Pale',       hex: '#CFC9C3' },
+      { name: 'Near White',  hex: '#F6F4F2' },
+    ]
+  },
+  {
+    name: 'Warm Sand',
+    desc: 'More visible warmth. Amber-tinted. Works beautifully with deep oranges.',
+    hue: '35° (amber sand)',
+    colors: [
+      { name: 'Dark',       hex: '#201C16' },
+      { name: 'Mid',        hex: '#6E655A' },
+      { name: 'Light',      hex: '#A29888' },
+      { name: 'Pale',       hex: '#D1C9BD' },
+      { name: 'Near White',  hex: '#F7F5F0' },
+    ]
+  },
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let selectedOrange = 0;
+let selectedGrey = 0;
+
+// ══════════════════════════════════════════════════════
+// RENDER ORANGE GRID
+// ══════════════════════════════════════════════════════
+function renderOrangeGrid() {
+  const grid = document.getElementById('orangeGrid');
+  grid.innerHTML = oranges.map((o, i) => `
+    <div class="orange-card ${i === selectedOrange ? 'selected' : ''}" data-idx="${i}">
+      <div class="orange-swatch" style="background: ${o.hex};">
+        <div class="orange-swatch-name">${o.name}</div>
+      </div>
+      <div class="orange-info">
+        <div class="orange-hex">${o.hex}</div>
+        <div class="orange-desc">${o.desc}</div>
+        <div class="orange-specs">
+          HSL: ${o.hsl}<br>
+          RGB: ${o.rgb}<br>
+          Pantone: ${o.pantone}<br>
+          Temperature: ${o.temp}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.orange-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selectedOrange = parseInt(card.dataset.idx);
+      renderOrangeGrid();
+      updateOrangePreview();
+      updateCombinedPreview();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER GREY GRID
+// ══════════════════════════════════════════════════════
+function renderGreyGrid() {
+  const grid = document.getElementById('greyGrid');
+  grid.innerHTML = greys.map((g, i) => `
+    <div class="grey-palette-card ${i === selectedGrey ? 'selected' : ''}" data-idx="${i}">
+      <div class="grey-palette-header">
+        <div class="grey-palette-name">${g.name}</div>
+        <div class="grey-palette-desc">${g.desc}</div>
+      </div>
+      <div class="grey-strip-mini">
+        ${g.colors.map(c => `<div style="background: ${c.hex};"></div>`).join('')}
+      </div>
+      <div class="grey-palette-detail">
+        ${g.colors.map(c => `
+          <div class="grey-detail-row">
+            <div class="grey-detail-name">
+              <span class="grey-detail-dot" style="background: ${c.hex}; ${c.name === 'Near White' ? 'border: 1px solid #ddd;' : ''}"></span>
+              ${c.name}
+            </div>
+            <div class="grey-detail-hex">${c.hex}</div>
+          </div>
+        `).join('')}
+        <div style="font-family: var(--font-mono); font-size: 9px; color: #bbb; margin-top: 8px;">
+          Hue bias: ${g.hue}
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.grey-palette-card').forEach(card => {
+    card.addEventListener('click', () => {
+      selectedGrey = parseInt(card.dataset.idx);
+      renderGreyGrid();
+      updateGreyPreview();
+      updateCombinedPreview();
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// UPDATE PREVIEWS
+// ══════════════════════════════════════════════════════
+function updateOrangePreview() {
+  const o = oranges[selectedOrange];
+  const color = o.hex;
+
+  // Dark preview
+  document.getElementById('pdLabel').style.color = color;
+  document.getElementById('pdStat').style.color = color;
+  document.getElementById('pdBar').style.background = `linear-gradient(90deg, ${color} 0%, ${color} 76%, rgba(255,255,255,0.1) 76%)`;
+
+  // Light preview
+  ['plCardLabel1','plCardLabel2','plCardLabel3'].forEach(id => {
+    document.getElementById(id).style.color = color;
+  });
+  ['plCardMeta1','plCardMeta2','plCardMeta3'].forEach(id => {
+    document.getElementById(id).style.color = color;
+  });
+
+  // Wordmark preview
+  document.getElementById('pwTag1').style.color = color;
+
+  // Tab indicator
+  document.querySelectorAll('.preview-tab.active').forEach(t => {
+    t.style.borderBottomColor = color;
+  });
+}
+
+function updateGreyPreview() {
+  const g = greys[selectedGrey];
+  const dark = g.colors[0].hex;
+  const mid = g.colors[1].hex;
+  const light = g.colors[2].hex;
+  const pale = g.colors[3].hex;
+  const nearWhite = g.colors[4].hex;
+
+  const textEl = document.getElementById('greyPrevText');
+  textEl.querySelector('h3').style.color = dark;
+  textEl.querySelector('.body-text').style.color = mid;
+  textEl.querySelector('.secondary').style.color = light;
+  textEl.querySelector('.meta').style.color = light;
+
+  const cardEl = document.querySelector('.grey-prev-card');
+  cardEl.style.background = dark;
+  document.getElementById('gpCardLabel').style.color = oranges[selectedOrange].hex;
+  document.getElementById('gpCardTitle').style.color = '#fff';
+  document.getElementById('gpCardBody').style.color = `rgba(255,255,255,0.5)`;
+  document.getElementById('gpCardMeta').style.color = `rgba(255,255,255,0.3)`;
+}
+
+function updateCombinedPreview() {
+  const o = oranges[selectedOrange];
+  const g = greys[selectedGrey];
+  const dark = g.colors[0].hex;
+  const mid = g.colors[1].hex;
+  const light = g.colors[2].hex;
+  const pale = g.colors[3].hex;
+
+  // Dark combined
+  document.getElementById('combinedDark').style.background = dark;
+  document.getElementById('cbLabel').style.color = o.hex;
+  document.getElementById('cbBody').style.color = `rgba(255,255,255,0.5)`;
+  document.getElementById('cbWordmark').style.color = o.hex;
+  document.getElementById('cbMeta').style.color = `rgba(255,255,255,0.25)`;
+  document.getElementById('cbFooter').style.borderTopColor = `rgba(255,255,255,0.08)`;
+  document.getElementById('cbFooter').style.borderTop = `1px solid rgba(255,255,255,0.08)`;
+
+  // Light combined
+  document.getElementById('clLabel').style.color = o.hex;
+  document.getElementById('clHeadline').style.color = dark;
+  document.getElementById('clBody').style.color = mid;
+  document.getElementById('clWordmark').style.color = dark;
+  document.getElementById('clTag').style.color = dark;
+  document.getElementById('clMeta').style.color = light;
+  document.getElementById('clFooter').style.borderTop = `2px solid ${o.hex}`;
+}
+
+// ══════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('.preview-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.preview-tab').forEach(t => {
+      t.classList.remove('active');
+      t.style.borderBottomColor = 'transparent';
+    });
+    tab.classList.add('active');
+    tab.style.borderBottomColor = oranges[selectedOrange].hex;
+
+    const target = tab.dataset.tab;
+    document.querySelectorAll('.preview-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector(`[data-panel="${target}"]`).classList.add('active');
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+renderOrangeGrid();
+renderGreyGrid();
+updateOrangePreview();
+updateGreyPreview();
+updateCombinedPreview();
+</script>
+
+</body>
+</html>
