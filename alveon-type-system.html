@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Type System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000000;
+    --dark: #1A1A1A;
+    --dark-2: #2A2A2A;
+    --mid: #666666;
+    --light: #999999;
+    --pale: #CCCCCC;
+    --near-white: #F2F2F2;
+    --bg: #F7F7F7;
+    --white: #FFFFFF;
+    --orange: #FF5A00;
+    --orange-light: rgba(255, 90, 0, 0.08);
+
+    --display: 'Outfit', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--white);
+    color: var(--dark);
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--display);
+  }
+
+  /* ===== LAYOUT ===== */
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  section {
+    padding: 80px;
+    border-bottom: 1px solid var(--near-white);
+  }
+  section:last-child { border-bottom: none; }
+  section.dark {
+    background: var(--dark);
+    border-bottom-color: #2a2a2a;
+  }
+  section.bg {
+    background: var(--bg);
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+  .dark .section-label { color: var(--orange); }
+
+  .section-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--black);
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .dark .section-title { color: var(--white); }
+
+  .section-desc {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--mid);
+    max-width: 600px;
+    line-height: 1.65;
+    margin-bottom: 48px;
+  }
+  .dark .section-desc { color: #777; }
+
+  /* ===== HEADER ===== */
+  .header {
+    padding: 60px 80px 48px;
+    border-bottom: 1px solid var(--near-white);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .header-left h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .header-left p {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--light);
+  }
+  .header-right {
+    text-align: right;
+  }
+  .header-right .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--pale);
+    line-height: 1.8;
+  }
+
+  /* ===== WORDMARK SECTION ===== */
+  .wordmark-hero {
+    text-align: center;
+    padding: 100px 80px;
+    background: var(--dark);
+  }
+  .wordmark-hero .wordmark {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 140px;
+    letter-spacing: 0.1em;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+  .wordmark-hero .tagline {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 0.16em;
+    color: var(--light);
+    text-transform: uppercase;
+  }
+
+  /* ===== SPECS TABLE ===== */
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--near-white);
+    margin-bottom: 48px;
+  }
+  .spec-cell {
+    background: var(--white);
+    padding: 24px;
+  }
+  .dark .specs { background: #333; }
+  .dark .spec-cell { background: var(--dark); }
+  .spec-cell h4 {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--pale);
+    margin-bottom: 8px;
+  }
+  .spec-cell .value {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--dark);
+  }
+  .dark .spec-cell .value { color: var(--white); }
+  .spec-cell .note {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--light);
+    margin-top: 4px;
+  }
+
+  /* ===== HIERARCHY ===== */
+  .hierarchy-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: baseline;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--near-white);
+  }
+  .hierarchy-row:last-child { border-bottom: none; }
+  .dark .hierarchy-row { border-bottom-color: #2a2a2a; }
+
+  .hierarchy-meta {
+    padding-right: 32px;
+  }
+  .hierarchy-meta .level {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 4px;
+  }
+  .hierarchy-meta .spec {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--light);
+    line-height: 1.7;
+  }
+
+  /* ===== PAIRING RULES ===== */
+  .rule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+  .rule-card {
+    padding: 32px;
+    background: var(--near-white);
+  }
+  .dark .rule-card { background: var(--dark-2); }
+  .rule-card .rule-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 16px;
+  }
+
+  /* ===== APPLICATION CARDS ===== */
+  .app-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .app-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+  }
+  .app-card {
+    background: var(--near-white);
+    padding: 32px;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .app-card.dark-card {
+    background: var(--dark);
+  }
+  .app-card.black-card {
+    background: var(--black);
+  }
+  .app-card.orange-card {
+    background: var(--orange);
+  }
+  .app-card .card-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--pale);
+    margin-bottom: 20px;
+  }
+  .app-card.dark-card .card-label,
+  .app-card.black-card .card-label { color: #555; }
+  .app-card.orange-card .card-label { color: rgba(255,255,255,0.5); }
+  .app-card .card-content { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+
+  /* ===== DOS AND DONTS ===== */
+  .do-dont-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .do-card, .dont-card {
+    padding: 32px;
+  }
+  .do-card { background: var(--near-white); }
+  .dont-card { background: #FFF5F0; }
+  .do-card .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #2A8A4B;
+    margin-bottom: 16px;
+  }
+  .dont-card .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #CC3300;
+    margin-bottom: 16px;
+  }
+
+  /* ===== WEIGHT STRIP ===== */
+  .weight-strip {
+    display: flex;
+    gap: 0;
+    margin-bottom: 48px;
+  }
+  .weight-block {
+    flex: 1;
+    padding: 24px 16px;
+    text-align: center;
+    border-right: 1px solid var(--near-white);
+  }
+  .weight-block:last-child { border-right: none; }
+  .dark .weight-block { border-right-color: #333; }
+  .weight-block .wt-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--light);
+    margin-bottom: 8px;
+  }
+  .weight-block .wt-number {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--pale);
+    margin-top: 6px;
+  }
+
+  /* ===== DIMENSION LINE ===== */
+  .dimension-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+  }
+  .dimension-line .line {
+    flex: 1;
+    height: 1px;
+    background: var(--pale);
+    position: relative;
+  }
+  .dimension-line .line::before,
+  .dimension-line .line::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    width: 1px;
+    height: 9px;
+    background: var(--pale);
+  }
+  .dimension-line .line::before { left: 0; }
+  .dimension-line .line::after { right: 0; }
+  .dimension-line .dim-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--light);
+    white-space: nowrap;
+  }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    padding: 40px 80px;
+    border-top: 1px solid var(--near-white);
+    display: flex;
+    justify-content: space-between;
+  }
+  .footer span {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--pale);
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ============================================================ -->
+<!-- HEADER -->
+<!-- ============================================================ -->
+<div class="header">
+  <div class="header-left">
+    <h1>Alveon Type System</h1>
+    <p>Phase 2 / Typography / v1.0</p>
+  </div>
+  <div class="header-right">
+    <div class="meta">
+      Direction C: The Architect<br>
+      Display: Outfit (upgrade: GT America Extended)<br>
+      Data: JetBrains Mono (upgrade: Söhne Mono)<br>
+      February 2026 / Confidential
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 01 WORDMARK -->
+<!-- ============================================================ -->
+<div class="wordmark-hero">
+  <div class="wordmark">ALVEON</div>
+  <div class="tagline">Engineered for One.</div>
+</div>
+
+<section>
+  <div class="section-label">01</div>
+  <div class="section-title">The Wordmark</div>
+  <div class="section-desc">
+    The Alveon wordmark is set in Outfit ExtraBold (800) with wide tracking. It is always uppercase. It is always set in black, white, or Alveon Orange. No other colors. No other weights. No other tracking.
+  </div>
+
+  <div class="specs">
+    <div class="spec-cell">
+      <h4>Typeface</h4>
+      <div class="value">Outfit</div>
+      <div class="note">Upgrade: GT America Extended</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Weight</h4>
+      <div class="value">800 ExtraBold</div>
+      <div class="note">Always. No exceptions.</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Tracking</h4>
+      <div class="value">0.10em</div>
+      <div class="note">~100 in design tools</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Case</h4>
+      <div class="value">All Caps</div>
+      <div class="note">Never mixed case.</div>
+    </div>
+  </div>
+
+  <!-- Sizing -->
+  <div style="margin-bottom: 48px;">
+    <div class="section-label" style="margin-bottom: 24px;">Minimum sizes</div>
+    <div style="margin-bottom: 24px;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 72px; letter-spacing: 0.1em; color: var(--black);">ALVEON</div>
+      <div class="dimension-line">
+        <span class="dim-label">72px</span>
+        <div class="line"></div>
+        <span class="dim-label">Hero / Stadium / Signage</span>
+      </div>
+    </div>
+    <div style="margin-bottom: 24px;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 36px; letter-spacing: 0.1em; color: var(--black);">ALVEON</div>
+      <div class="dimension-line">
+        <span class="dim-label">36px</span>
+        <div class="line"></div>
+        <span class="dim-label">Document header / Report cover</span>
+      </div>
+    </div>
+    <div style="margin-bottom: 24px;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: 0.1em; color: var(--black);">ALVEON</div>
+      <div class="dimension-line">
+        <span class="dim-label">18px</span>
+        <div class="line"></div>
+        <span class="dim-label">Shoe label / Product tag</span>
+      </div>
+    </div>
+    <div style="margin-bottom: 24px;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 11px; letter-spacing: 0.1em; color: var(--black);">ALVEON</div>
+      <div class="dimension-line">
+        <span class="dim-label">11px</span>
+        <div class="line"></div>
+        <span class="dim-label">Minimum. Never go smaller.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Color rules -->
+  <div class="section-label" style="margin-bottom: 24px;">Wordmark colors</div>
+  <div class="app-grid-3" style="margin-bottom: 0;">
+    <div class="app-card" style="min-height: 140px; display: flex; align-items: center; justify-content: center; background: var(--white); border: 1px solid var(--near-white);">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 32px; letter-spacing: 0.1em; color: var(--black);">ALVEON</div>
+    </div>
+    <div class="app-card dark-card" style="min-height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 32px; letter-spacing: 0.1em; color: var(--white);">ALVEON</div>
+    </div>
+    <div class="app-card black-card" style="min-height: 140px; display: flex; align-items: center; justify-content: center;">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 32px; letter-spacing: 0.1em; color: var(--orange);">ALVEON</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 02 TYPE HIERARCHY -->
+<!-- ============================================================ -->
+<section>
+  <div class="section-label">02</div>
+  <div class="section-title">Type Hierarchy</div>
+  <div class="section-desc">
+    The Alveon type system uses two typefaces in clearly defined roles. Outfit handles everything the audience reads first. JetBrains Mono handles everything that proves what Outfit claims.
+  </div>
+
+  <!-- Weight strip -->
+  <div class="section-label" style="margin-bottom: 16px;">Outfit weight range</div>
+  <div class="weight-strip">
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 300; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Light</div>
+      <div class="wt-number">300</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 400; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Regular</div>
+      <div class="wt-number">400</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 500; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Medium</div>
+      <div class="wt-number">500</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 600; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">SemiBold</div>
+      <div class="wt-number">600</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 700; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Bold</div>
+      <div class="wt-number">700</div>
+    </div>
+    <div class="weight-block" style="background: var(--orange-light);">
+      <div style="font-family: var(--display); font-weight: 800; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">ExtraBold</div>
+      <div class="wt-number">800</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--display); font-weight: 900; font-size: 28px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Black</div>
+      <div class="wt-number">900</div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-bottom: 16px;">JetBrains Mono weight range</div>
+  <div class="weight-strip" style="margin-bottom: 56px;">
+    <div class="weight-block">
+      <div style="font-family: var(--mono); font-weight: 300; font-size: 24px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Light</div>
+      <div class="wt-number">300</div>
+    </div>
+    <div class="weight-block" style="background: var(--orange-light);">
+      <div style="font-family: var(--mono); font-weight: 400; font-size: 24px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Regular</div>
+      <div class="wt-number">400</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--mono); font-weight: 500; font-size: 24px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Medium</div>
+      <div class="wt-number">500</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--mono); font-weight: 600; font-size: 24px; color: var(--dark);">Aa</div>
+      <div class="wt-label">SemiBold</div>
+      <div class="wt-number">600</div>
+    </div>
+    <div class="weight-block">
+      <div style="font-family: var(--mono); font-weight: 700; font-size: 24px; color: var(--dark);">Aa</div>
+      <div class="wt-label">Bold</div>
+      <div class="wt-number">700</div>
+    </div>
+  </div>
+
+  <!-- Hierarchy levels -->
+  <div class="section-label" style="margin-bottom: 24px;">Hierarchy levels</div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Display</div>
+      <div class="spec">Outfit 800<br>48-72px / 0.04em<br>Uppercase</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 800; font-size: 56px; letter-spacing: 0.04em; color: var(--black); line-height: 1.05; text-transform: uppercase;">
+      Every Foot Is Different
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Headline 1</div>
+      <div class="spec">Outfit 700<br>32-40px / 0.02em<br>Mixed case</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 700; font-size: 36px; letter-spacing: 0.02em; color: var(--black); line-height: 1.15;">
+      The Football Boot Is Broken
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Headline 2</div>
+      <div class="spec">Outfit 600<br>24-28px / 0.01em<br>Mixed case</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 600; font-size: 26px; letter-spacing: 0.01em; color: var(--black); line-height: 1.25;">
+      Biomechanical Research You Can Wear
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Headline 3</div>
+      <div class="spec">Outfit 600<br>18-20px / 0em<br>Mixed case</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 600; font-size: 19px; color: var(--black); line-height: 1.35;">
+      Five Truths That Guide Everything We Make
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Body</div>
+      <div class="spec">Outfit 400<br>15-16px / 0em<br>Mixed case / 1.65 line height</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 400; font-size: 15px; color: var(--mid); line-height: 1.65; max-width: 540px;">
+      Every stride, every cut, every pivot on the pitch begins with the foot. No two feet are the same. Not in shape. Not in movement. Not in the way they absorb impact or transfer force into the ground. Yet the entire football boot industry builds for the average.
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Body Emphasis</div>
+      <div class="spec">Outfit 600<br>15-16px / 0em<br>Mixed case / 1.65 line height</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 400; font-size: 15px; color: var(--mid); line-height: 1.65; max-width: 540px;">
+      We do not make football boots. <span style="font-weight: 600; color: var(--dark);">We make your football boot.</span>
+    </div>
+  </div>
+
+  <div class="hierarchy-row">
+    <div class="hierarchy-meta">
+      <div class="level">Caption</div>
+      <div class="spec">Outfit 400<br>12-13px / 0em<br>Mixed case / Color: mid grey</div>
+    </div>
+    <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--light); line-height: 1.5;">
+      Fig. 01: 3D surface scan, left foot, standing load. Hamburg Performance Center, 2026.
+    </div>
+  </div>
+
+  <div class="hierarchy-row" style="border-bottom: none; padding-bottom: 0;">
+    <div class="hierarchy-meta">
+      <div class="level">Category Label</div>
+      <div class="spec">Mono 500<br>9-11px / 0.15-0.2em<br>Uppercase / Color: orange or pale</div>
+    </div>
+    <div>
+      <div style="font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.18em; color: var(--orange); text-transform: uppercase; margin-bottom: 8px;">Biomechanical Analysis</div>
+      <div style="font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.18em; color: var(--pale); text-transform: uppercase;">Design Principles</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 03 PAIRING RULES -->
+<!-- ============================================================ -->
+<section class="dark">
+  <div class="section-label">03</div>
+  <div class="section-title">Pairing Rules</div>
+  <div class="section-desc">
+    The two typefaces have distinct territories. Outfit leads. JetBrains Mono proves. They meet but never compete.
+  </div>
+
+  <div class="rule-grid">
+    <div class="rule-card" style="background: var(--dark-2);">
+      <div class="rule-label">Outfit territory</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: #888; line-height: 1.65;">
+        <span style="color: var(--white); font-weight: 600;">Wordmark.</span> Always Outfit 800, always uppercase.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Headlines.</span> The first thing you read. Weights 600-800.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Body text.</span> Explanations, descriptions, long-form content. Weight 400, occasionally 600 for emphasis.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Captions.</span> Image descriptions, figure labels. Weight 400, reduced size.
+      </div>
+    </div>
+    <div class="rule-card" style="background: var(--dark-2);">
+      <div class="rule-label">JetBrains Mono territory</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: #888; line-height: 1.65;">
+        <span style="color: var(--white); font-weight: 600;">Category labels.</span> Uppercase, small, wide-tracked. The section markers.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Data and measurements.</span> Scan values, dimensions, reference numbers. Mixed case.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Technical annotations.</span> Blueprint layer. Zone codes, player IDs, dates.<br><br>
+        <span style="color: var(--white); font-weight: 600;">Metadata.</span> Document footers, version numbers, timestamps.
+      </div>
+    </div>
+  </div>
+
+  <!-- Live pairing example -->
+  <div class="section-label" style="margin-bottom: 24px;">Live pairing</div>
+  <div style="padding: 40px; background: var(--dark-2); margin-bottom: 24px;">
+    <div style="font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); margin-bottom: 16px;">Player Profile / Scan Report</div>
+    <div style="font-family: var(--display); font-weight: 700; font-size: 32px; color: var(--white); letter-spacing: 0.02em; margin-bottom: 6px;">Biomechanical Assessment</div>
+    <div style="font-family: var(--mono); font-weight: 400; font-size: 12px; color: #555; margin-bottom: 24px;">REF-00847 / 2026.02.20 / Hamburg Performance Center</div>
+    <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: #888; line-height: 1.65; max-width: 560px; margin-bottom: 24px;">
+      3D surface scan completed under standing load conditions. Both feet scanned using structured light capture with 0.3mm accuracy. Plantar surface measured directly via footbed contact protocol.
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px;">
+      <div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 10px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">Foot length</div>
+        <div style="font-family: var(--mono); font-weight: 500; font-size: 20px; color: var(--white);">271.3<span style="font-size: 13px; color: #555;">mm</span></div>
+      </div>
+      <div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 10px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">Forefoot width</div>
+        <div style="font-family: var(--mono); font-weight: 500; font-size: 20px; color: var(--white);">98.1<span style="font-size: 13px; color: #555;">mm</span></div>
+      </div>
+      <div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 10px; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;">Arch height</div>
+        <div style="font-family: var(--mono); font-weight: 500; font-size: 20px; color: var(--white);">32.4<span style="font-size: 13px; color: #555;">mm</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotation guide -->
+  <div style="padding: 40px; background: var(--dark-2);">
+    <div style="font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); margin-bottom: 20px;">Annotation pattern</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+      <div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 10px; color: #555; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;">Category label</div>
+        <div style="font-family: var(--mono); font-weight: 500; font-size: 14px; color: var(--white); margin-bottom: 4px;">Value in mixed case</div>
+        <div style="font-family: var(--mono); font-weight: 300; font-size: 12px; color: #666;">Supporting detail or note</div>
+      </div>
+      <div>
+        <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: #666; line-height: 1.7;">
+          This three-line pattern repeats throughout the system. <span style="color: #888;">Uppercase mono for category.</span> <span style="color: var(--white);">Medium mono for value.</span> <span style="color: #555;">Light mono for context.</span> Consistent rhythm everywhere.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 04 APPLICATIONS -->
+<!-- ============================================================ -->
+<section>
+  <div class="section-label">04</div>
+  <div class="section-title">Applications</div>
+  <div class="section-desc">
+    How the type system works across real touchpoints. Every example uses only the defined hierarchy levels. Nothing else.
+  </div>
+
+  <div class="app-grid" style="margin-bottom: 24px;">
+    <!-- SCAN REPORT COVER -->
+    <div class="app-card dark-card" style="min-height: 360px; padding: 40px;">
+      <div class="card-label">Scan report / Cover page</div>
+      <div class="card-content">
+        <div style="font-family: var(--mono); font-weight: 500; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); margin-bottom: 24px;">Biomechanical Analysis</div>
+        <div style="font-family: var(--display); font-weight: 700; font-size: 32px; color: var(--white); letter-spacing: 0.02em; line-height: 1.15; margin-bottom: 8px;">Player Profile<br>Report</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 11px; color: #555; line-height: 1.7; margin-bottom: 24px;">
+          Ref. AV-00847<br>
+          2026.02.20 / Hamburg
+        </div>
+        <div style="font-family: var(--display); font-weight: 800; font-size: 14px; letter-spacing: 0.1em; color: var(--white);">ALVEON</div>
+      </div>
+    </div>
+
+    <!-- WEBSITE HERO -->
+    <div class="app-card" style="min-height: 360px; padding: 40px; background: var(--white); border: 1px solid var(--near-white);">
+      <div class="card-label" style="color: var(--light);">Website / Hero section</div>
+      <div class="card-content">
+        <div style="font-family: var(--display); font-weight: 800; font-size: 14px; letter-spacing: 0.1em; color: var(--black); margin-bottom: 32px;">ALVEON</div>
+        <div style="font-family: var(--display); font-weight: 800; font-size: 42px; letter-spacing: 0.04em; color: var(--black); line-height: 1.05; text-transform: uppercase; margin-bottom: 16px;">Engineered<br>for One.</div>
+        <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--mid); line-height: 1.6; max-width: 320px;">
+          The first made-to-measure football boot. Built from your scan data. Not from a standard last.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-grid" style="margin-bottom: 24px;">
+    <!-- PITCH DECK SLIDE -->
+    <div class="app-card black-card" style="min-height: 320px; padding: 40px;">
+      <div class="card-label">Pitch deck / Key metric slide</div>
+      <div class="card-content">
+        <div style="display: flex; gap: 32px; align-items: flex-end;">
+          <div>
+            <div style="font-family: var(--mono); font-weight: 400; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: #555; margin-bottom: 6px;">Players with fit issues</div>
+            <div style="font-family: var(--display); font-weight: 800; font-size: 64px; color: var(--orange); line-height: 1;">76%</div>
+          </div>
+          <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: #555; line-height: 1.5; max-width: 240px; padding-bottom: 8px;">
+            of footballers experience discomfort in the heel region alone.
+          </div>
+        </div>
+        <div style="font-family: var(--mono); font-weight: 300; font-size: 10px; color: #444; margin-top: 20px;">
+          Loughborough University, ISEA 2024
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSINESS CARD -->
+    <div class="app-card" style="min-height: 320px; padding: 40px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="card-label" style="color: var(--light);">Business card / Front</div>
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+        <div style="font-family: var(--display); font-weight: 800; font-size: 18px; letter-spacing: 0.1em; color: var(--black); margin-bottom: 32px;">ALVEON</div>
+        <div style="font-family: var(--display); font-weight: 600; font-size: 14px; color: var(--dark); margin-bottom: 4px;">Jurgen Alker</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--light); margin-bottom: 16px;">Co-Founder & CEO</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 11px; color: var(--mid); line-height: 1.8;">
+          jurgen@alveon.com<br>
+          alveon.com
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-grid-3">
+    <!-- SHOE LABEL -->
+    <div class="app-card dark-card" style="min-height: 200px; padding: 28px;">
+      <div class="card-label">Shoe label</div>
+      <div class="card-content">
+        <div style="font-family: var(--display); font-weight: 800; font-size: 16px; letter-spacing: 0.1em; color: var(--white); margin-bottom: 12px;">ALVEON</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 9px; color: #555; letter-spacing: 0.06em; line-height: 1.8;">
+          MODEL AV-PRO-01<br>
+          PLAYER ID 00847<br>
+          <span style="color: var(--orange);">SIZE INDIVIDUAL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERFORMANCE CENTER SIGN -->
+    <div class="app-card orange-card" style="min-height: 200px; padding: 28px; display: flex; align-items: center; justify-content: center; text-align: center;">
+      <div>
+        <div style="font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: 0.1em; color: var(--white);">ALVEON</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 9px; letter-spacing: 0.14em; color: rgba(255,255,255,0.6); margin-top: 8px;">PERFORMANCE CENTER</div>
+      </div>
+    </div>
+
+    <!-- EMAIL SIGNATURE -->
+    <div class="app-card" style="min-height: 200px; padding: 28px; background: var(--white); border: 1px solid var(--near-white);">
+      <div class="card-label" style="color: var(--light);">Email signature</div>
+      <div class="card-content">
+        <div style="width: 40px; height: 3px; background: var(--orange); margin-bottom: 12px;"></div>
+        <div style="font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--dark); margin-bottom: 2px;">Jurgen Alker</div>
+        <div style="font-family: var(--mono); font-weight: 400; font-size: 10px; color: var(--light); margin-bottom: 10px;">Co-Founder & CEO</div>
+        <div style="font-family: var(--display); font-weight: 800; font-size: 10px; letter-spacing: 0.1em; color: var(--dark);">ALVEON</div>
+        <div style="font-family: var(--mono); font-weight: 300; font-size: 10px; color: var(--light); margin-top: 2px;">alveon.com</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 05 DO'S AND DON'TS -->
+<!-- ============================================================ -->
+<section class="bg">
+  <div class="section-label">05</div>
+  <div class="section-title">Rules</div>
+  <div class="section-desc">
+    Typography is the brand until there is product in market. These rules protect it.
+  </div>
+
+  <div class="do-dont-grid" style="margin-bottom: 24px;">
+    <div class="do-card">
+      <div class="tag">Do</div>
+      <div style="font-family: var(--display); font-weight: 800; font-size: 28px; letter-spacing: 0.1em; color: var(--black); margin-bottom: 12px;">ALVEON</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Wordmark always in Outfit 800, uppercase, with 0.1em tracking.</div>
+    </div>
+    <div class="dont-card">
+      <div class="tag">Don't</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 28px; letter-spacing: 0em; color: var(--black); margin-bottom: 12px;">Alveon</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Never set the wordmark in mixed case, light weight, or without tracking.</div>
+    </div>
+  </div>
+
+  <div class="do-dont-grid" style="margin-bottom: 24px;">
+    <div class="do-card">
+      <div class="tag">Do</div>
+      <div style="font-family: var(--mono); font-weight: 500; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px;">Scan Protocol</div>
+      <div style="font-family: var(--mono); font-weight: 400; font-size: 13px; color: var(--mid); margin-bottom: 12px;">Medial arch height: 32.4mm</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Use mono for labels (uppercase) and data values (mixed case).</div>
+    </div>
+    <div class="dont-card">
+      <div class="tag">Don't</div>
+      <div style="font-family: var(--display); font-weight: 700; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--orange); margin-bottom: 8px;">Scan Protocol</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid); margin-bottom: 12px;">Medial arch height: 32.4mm</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Never use Outfit for labels or technical data. That is mono territory.</div>
+    </div>
+  </div>
+
+  <div class="do-dont-grid" style="margin-bottom: 24px;">
+    <div class="do-card">
+      <div class="tag">Do</div>
+      <div style="font-family: var(--display); font-weight: 700; font-size: 22px; color: var(--black); margin-bottom: 4px;">The Athlete Comes First</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--mid); margin-bottom: 12px;">Every decision begins and ends with the athlete.</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Headlines in mixed case, body in regular weight. Clear visual hierarchy.</div>
+    </div>
+    <div class="dont-card">
+      <div class="tag">Don't</div>
+      <div style="font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--black); margin-bottom: 4px;">THE ATHLETE COMES FIRST</div>
+      <div style="font-family: var(--display); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--mid); margin-bottom: 12px;">EVERY DECISION BEGINS AND ENDS WITH THE ATHLETE.</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Never set everything uppercase and bold. All-caps is reserved for the wordmark and display headlines only.</div>
+    </div>
+  </div>
+
+  <div class="do-dont-grid">
+    <div class="do-card">
+      <div class="tag">Do</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--mid); line-height: 1.6; margin-bottom: 12px;">
+        Use Outfit 600 for <span style="font-weight: 600; color: var(--dark);">inline emphasis</span> within body text. One weight step up, same typeface.
+      </div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">Emphasis through weight, not through decoration.</div>
+    </div>
+    <div class="dont-card">
+      <div class="tag">Don't</div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--mid); line-height: 1.6; margin-bottom: 12px;">
+        Use <span style="text-decoration: underline;">underlines</span>, <span style="font-style: italic;">italics</span>, or <span style="color: var(--orange); font-weight: 700;">colored bold text</span> for emphasis in body copy.
+      </div>
+      <div style="font-family: var(--display); font-weight: 400; font-size: 13px; color: var(--mid);">No underlines. No italics. No colored emphasis in running text.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 06 COMMERCIAL UPGRADE PATH -->
+<!-- ============================================================ -->
+<section>
+  <div class="section-label">06</div>
+  <div class="section-title">License Roadmap</div>
+  <div class="section-desc">
+    The current system runs entirely on open-source fonts. When budget allows, these are the commercial upgrades that elevate the system from good to world-class.
+  </div>
+
+  <div class="specs" style="margin-bottom: 32px;">
+    <div class="spec-cell">
+      <h4>Phase</h4>
+      <div class="value">Now</div>
+      <div class="note">Free / Open source</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Display</h4>
+      <div class="value">Outfit</div>
+      <div class="note">Google Fonts</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Mono</h4>
+      <div class="value">JetBrains Mono</div>
+      <div class="note">Open source (JetBrains)</div>
+    </div>
+    <div class="spec-cell">
+      <h4>Cost</h4>
+      <div class="value" style="color: #2A8A4B;">EUR 0</div>
+      <div class="note">Ship immediately</div>
+    </div>
+  </div>
+
+  <div class="specs" style="margin-bottom: 32px; background: var(--orange-light);">
+    <div class="spec-cell" style="background: var(--orange-light);">
+      <h4>Phase</h4>
+      <div class="value">With funding</div>
+      <div class="note">Priority upgrade</div>
+    </div>
+    <div class="spec-cell" style="background: var(--orange-light);">
+      <h4>Display</h4>
+      <div class="value">GT America Extended</div>
+      <div class="note">Grilli Type</div>
+    </div>
+    <div class="spec-cell" style="background: var(--orange-light);">
+      <h4>Mono</h4>
+      <div class="value">Sohne Mono</div>
+      <div class="note">Klim Type Foundry</div>
+    </div>
+    <div class="spec-cell" style="background: var(--orange-light);">
+      <h4>Cost</h4>
+      <div class="value">~EUR 500-800</div>
+      <div class="note">Desktop + Web licenses</div>
+    </div>
+  </div>
+
+  <div style="font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--mid); line-height: 1.65; max-width: 600px;">
+    GT America Extended has the same geometric DNA as Outfit but with more optical refinement, better hinting, and a wider weight range. Sohne Mono from Klim is the reference standard for technical typography. Both foundries offer startup-friendly licensing. The switch requires no structural changes to the system. Same weights, same rules, same hierarchy. Just better curves.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<div class="footer">
+  <span>ALVEON GmbH / Hamburg</span>
+  <span>Type System v1.0 / Phase 2 / February 2026 / Confidential</span>
+</div>
+
+</div>
+</body>
+</html>
