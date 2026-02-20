@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALVEON Brand Foundation v2.0</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --black: #000000;
+    --dark: #1A1A1A;
+    --mid: #666666;
+    --light: #999999;
+    --pale: #CCCCCC;
+    --near-white: #F5F5F5;
+    --white: #FFFFFF;
+    --orange: #FF5A00;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-display);
+    background: var(--white);
+    color: var(--dark);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--near-white);
+    padding: 16px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-wordmark {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 14px; letter-spacing: 0.1em; color: var(--dark);
+  }
+  .nav-doc {
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--orange);
+  }
+  .nav-meta {
+    font-family: var(--font-mono); font-weight: 300;
+    font-size: 10px; color: var(--light); letter-spacing: 0.05em;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 120px 48px 100px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  section:first-of-type { padding-top: 160px; }
+
+  .section-dark {
+    background: var(--dark);
+    color: var(--white);
+    max-width: 100%;
+    padding-left: 0; padding-right: 0;
+  }
+  .section-dark .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+  .section-black {
+    background: var(--black);
+    color: var(--white);
+    max-width: 100%;
+    padding-left: 0; padding-right: 0;
+  }
+  .section-black .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+  .section-offwhite {
+    background: var(--near-white);
+    max-width: 100%;
+    padding-left: 0; padding-right: 0;
+  }
+  .section-offwhite .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+
+  /* ── LABELS ── */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 32px;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  .hero {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(36px, 6vw, 64px);
+    line-height: 1.05;
+    color: var(--black);
+    margin-bottom: 48px;
+  }
+  .section-dark .hero, .section-black .hero { color: var(--white); }
+
+  .big-statement {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(22px, 3vw, 32px);
+    line-height: 1.2;
+    color: var(--black);
+    margin: 40px 0 24px;
+  }
+  .section-dark .big-statement { color: var(--white); }
+  .section-black .big-statement { color: var(--white); }
+
+  .manifesto {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--mid);
+    margin-bottom: 24px;
+    max-width: 720px;
+  }
+  .section-dark .manifesto { color: rgba(255,255,255,0.65); }
+  .section-black .manifesto { color: rgba(255,255,255,0.55); }
+
+  .manifesto strong {
+    font-weight: 600;
+    color: var(--dark);
+  }
+  .section-dark .manifesto strong { color: var(--white); }
+  .section-black .manifesto strong { color: var(--white); }
+
+  .pull-quote {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--dark);
+    font-style: italic;
+    border-left: 3px solid var(--orange);
+    padding-left: 24px;
+    margin: 48px 0;
+    max-width: 640px;
+  }
+  .section-dark .pull-quote { color: rgba(255,255,255,0.85); }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 160px 48px 100px;
+    max-width: 100%;
+    background: var(--black);
+  }
+  .cover .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 48px;
+  }
+  .cover-wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(48px, 8vw, 80px);
+    letter-spacing: 0.12em;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+  .cover-subtitle {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 0;
+  }
+  .cover-meta {
+    position: absolute;
+    bottom: 60px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── PRINCIPLES ── */
+  .principle {
+    margin-bottom: 40px;
+    padding-bottom: 40px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .section-dark .principle { border-bottom-color: rgba(255,255,255,0.08); }
+  .principle:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .principle-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .principle-number {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--orange);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .principle-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dark);
+  }
+  .section-dark .principle-title { color: var(--white); }
+
+  .principle-body {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--mid);
+    max-width: 680px;
+    padding-left: 42px;
+  }
+  .section-dark .principle-body { color: rgba(255,255,255,0.55); }
+
+  /* ── CONTRAST TABLE ── */
+  .contrast-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin-top: 32px;
+  }
+  .contrast-header {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding-bottom: 16px;
+    margin-bottom: 0;
+  }
+  .contrast-header-is {
+    color: var(--orange);
+    border-bottom: 2px solid var(--orange);
+  }
+  .contrast-header-not {
+    color: var(--light);
+    border-bottom: 1px solid var(--pale);
+    padding-left: 32px;
+  }
+
+  .contrast-row {
+    display: contents;
+  }
+  .contrast-cell {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--near-white);
+    font-family: var(--font-display);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .contrast-is {
+    font-weight: 600;
+    color: var(--dark);
+    padding-right: 24px;
+  }
+  .contrast-not {
+    font-weight: 400;
+    color: var(--light);
+    padding-left: 32px;
+  }
+
+  /* ── POLES ── */
+  .pole {
+    margin-bottom: 36px;
+    padding-bottom: 36px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .pole:last-child { border-bottom: none; }
+  .pole-header {
+    display: flex; align-items: baseline; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .pole-letter {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--orange);
+  }
+  .pole-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dark);
+  }
+  .pole-body {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--mid);
+    padding-left: 36px;
+    max-width: 640px;
+  }
+
+  /* ── VOICE ── */
+  .voice-comparison {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px solid var(--orange);
+  }
+  .voice-other {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    color: var(--pale);
+    margin-bottom: 8px;
+  }
+  .voice-alveon-label {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    color: var(--mid);
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+  .voice-alveon {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(22px, 3vw, 28px);
+    color: var(--black);
+  }
+
+  /* ── CLOSING ── */
+  .closing-belief {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(17px, 2.2vw, 20px);
+    line-height: 1.6;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 24px;
+    max-width: 680px;
+  }
+  .closing-bold {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(20px, 2.5vw, 24px);
+    color: var(--white);
+    margin-top: 48px;
+    margin-bottom: 12px;
+  }
+  .closing-wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    color: var(--orange);
+    margin-top: 80px;
+  }
+  .closing-tagline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--white);
+    margin-top: 8px;
+  }
+  .closing-footer {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    margin-top: 120px;
+    letter-spacing: 0.05em;
+  }
+  .closing-footer em {
+    display: block;
+    margin-top: 6px;
+    font-style: italic;
+  }
+
+  /* ── FOOTNOTES ── */
+  .footnotes {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--pale);
+  }
+  .footnote {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--light);
+    line-height: 1.6;
+    margin-bottom: 4px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 12px 24px; }
+    section { padding: 80px 24px 60px; }
+    .cover { padding: 120px 24px 80px; }
+    .cover .inner,
+    .section-dark .inner,
+    .section-black .inner,
+    .section-offwhite .inner { padding: 0 24px; }
+    .contrast-grid { grid-template-columns: 1fr; gap: 0; }
+    .contrast-header-not { padding-left: 0; }
+    .contrast-not { padding-left: 0; }
+    .principle-body, .pole-body { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-wordmark">ALVEON</span>
+  <span class="nav-doc">BRAND FOUNDATION</span>
+  <span class="nav-meta">v2.0 / February 2026 / Confidential</span>
+</nav>
+
+<!-- 01 COVER -->
+<section class="cover" style="position: relative;">
+  <div class="inner">
+    <div class="cover-wordmark">ALVEON</div>
+    <div class="cover-subtitle">Brand Foundation</div>
+  </div>
+  <div class="cover-meta">v2.0 &nbsp;&middot;&nbsp; February 2026 &nbsp;&middot;&nbsp; Confidential</div>
+</section>
+
+<!-- 02 THE ATHLETE -->
+<section>
+  <div class="section-label">01 &mdash; The Athlete</div>
+  <h1 class="hero">Every foot is different.</h1>
+
+  <p class="manifesto">Every stride. Every cut. Every pivot. Every stop that saves a knee and every sprint that wins a game. It all starts with the foot. And no two are the same.</p>
+
+  <p class="manifesto">Yet for decades, the football boot has been built for the average. Millions of identical shoes, shipped to millions of different feet, hoping for the best.</p>
+
+  <p class="big-statement">That is not good enough.</p>
+
+  <p class="manifesto">Athletes push their bodies to the limit. They train in the dark, play through pain, and dedicate years of their lives to a sport that demands everything. They deserve more than a shoe that fits. They deserve a shoe that protects. That performs. That helps them play at the highest level for as long as possible.</p>
+
+  <p class="manifesto">Fit is where it starts. But the ambition is bigger. Fewer injuries. Better load distribution. Optimized biomechanics. The kind of precision that turns data into durability and durability into longer careers.</p>
+
+  <p class="manifesto">We start with the professionals. The players who depend on their bodies for their livelihood. The ones where a metatarsal fracture is not just pain but lost months, lost contracts, lost momentum. If we can build the right tool for the most demanding athletes on the planet, we can eventually build it for everyone.</p>
+
+  <p class="manifesto">Not a shoe that comes close. Not a shoe that works for most people. A shoe built for one athlete. Their foot. Their movement. Their game.</p>
+
+  <p class="big-statement">That is what Alveon exists to build.</p>
+</section>
+
+<!-- 03 BRAND IDEA -->
+<section class="section-dark" style="padding-top: 120px; padding-bottom: 120px;">
+  <div class="inner">
+    <div class="section-label">02 &mdash; Brand Idea</div>
+
+    <h1 class="hero" style="margin-top: 48px; margin-bottom: 48px;">Engineered for One.</h1>
+
+    <p class="manifesto">Alveon builds the first made-to-measure football boot in the world. We use 3D scanning, biomechanical research, and digital manufacturing to construct a shoe that fits exactly one player's foot.</p>
+
+    <p class="manifesto">This is not customization. This is not picking colors or printing a name on a tongue. This is construction at the individual level. One scan. One boot. One athlete.</p>
+
+    <div class="pull-quote">We do not make football boots. We make your football boot.</div>
+
+    <p class="manifesto">The technology behind Alveon is 3D knitting, 3D printing, and biomechanics. But the ambition is simpler than that: every athlete deserves a tool that is built for them. Not adapted. Not adjusted. Built.</p>
+  </div>
+</section>
+
+<!-- 04 WHAT WE ARE SOLVING -->
+<section>
+  <div class="section-label">03 &mdash; What We Are Solving</div>
+
+  <p class="big-statement" style="margin-top: 0;">The football boot is broken.</p>
+
+  <p class="manifesto">76% of footballers experience discomfort in the heel region alone.* 82% of women players report fit issues with their boots.** Not because they chose wrong. Because the right boot does not exist.</p>
+
+  <p class="manifesto">The consequences are real. Blisters and discomfort at best. Metatarsal fractures, ligament injuries, and shortened careers at worst. Players tape their feet, cut their boots, heat-mold them with hairdryers. They wear boots one or two sizes too small to get a better feel for the ball. They do everything they can to make a mass-produced shoe work for a body that is not mass-produced.</p>
+
+  <p class="manifesto">Brands spend billions on marketing and marginal foam improvements. But the most fundamental dimension of a football boot has not changed in decades: fit.</p>
+
+  <p class="big-statement">We start where others stop.</p>
+
+  <p class="manifesto">We start with the athlete's foot. We scan it. We measure how it moves under load. We map the zones of pressure, flex, and impact. And then we build a shoe around that data. Not around a last that was carved for someone else.</p>
+
+  <p class="big-statement">Alveon is biomechanical research you can wear.</p>
+
+  <div class="footnotes">
+    <p class="footnote">* Loughborough University, Proceedings of the 15th International Conference on the Engineering of Sport (ISEA), 2024.</p>
+    <p class="footnote">** Dr. Katrine Okholm Kryger, St Mary's University London. Study on foot shape in professional and international women's football players.</p>
+  </div>
+</section>
+
+<!-- 05 DESIGN PRINCIPLES -->
+<section class="section-offwhite" style="padding-top: 120px; padding-bottom: 120px;">
+  <div class="inner">
+    <div class="section-label">04 &mdash; Design Principles</div>
+    <p class="big-statement" style="margin-top: 0; margin-bottom: 48px;">Five truths that guide everything we make.</p>
+
+    <div class="principle">
+      <div class="principle-header">
+        <span class="principle-number">01</span>
+        <span class="principle-title">The Athlete Comes First</span>
+      </div>
+      <p class="principle-body">Every decision begins and ends with the athlete. Not the market. Not the trend cycle. Not the brand deal. If it does not make the player faster, safer, or more confident on the pitch, it does not make the cut. We listen to feet, not focus groups.</p>
+    </div>
+
+    <div class="principle">
+      <div class="principle-header">
+        <span class="principle-number">02</span>
+        <span class="principle-title">Construction Is Design</span>
+      </div>
+      <p class="principle-body">The knitting pattern is the surface. The 3D-printed sole is the form. The scan data is the blueprint. We do not decorate our products. The engineering is the aesthetic. Every visible element has a functional origin. If it has no purpose, it does not exist.</p>
+    </div>
+
+    <div class="principle">
+      <div class="principle-header">
+        <span class="principle-number">03</span>
+        <span class="principle-title">Precision Over Volume</span>
+      </div>
+      <p class="principle-body">We do not chase scale for the sake of scale. We build one boot at a time, each one different, each one right. Precision is our product. Compression is our luxury. One athlete, one measurement, one shoe.</p>
+    </div>
+
+    <div class="principle">
+      <div class="principle-header">
+        <span class="principle-number">04</span>
+        <span class="principle-title">Play Longer</span>
+      </div>
+      <p class="principle-body">Fewer injuries. Better fit. Longer careers. That is the promise. We are not building for one season. We are building for the athlete's entire journey. The data we collect today helps protect their body tomorrow. Performance is not just speed. Performance is durability.</p>
+    </div>
+
+    <div class="principle">
+      <div class="principle-header">
+        <span class="principle-number">05</span>
+        <span class="principle-title">Global From Day One</span>
+      </div>
+      <p class="principle-body">Alveon operates like a global brand because our system works globally. A scan in Hamburg and a scan in Sao Paulo produce the same precision. No regional charm. No startup aesthetics. The visual language is exact enough to be read anywhere. Like a technical drawing: universally understood.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 06 POSITIONING -->
+<section>
+  <div class="section-label">05 &mdash; Positioning</div>
+  <p class="big-statement" style="margin-top: 0; margin-bottom: 40px;">What Alveon is. And what it is not.</p>
+
+  <div class="contrast-grid">
+    <div class="contrast-header contrast-header-is">ALVEON IS</div>
+    <div class="contrast-header contrast-header-not">ALVEON IS NOT</div>
+
+    <div class="contrast-cell contrast-is">A construction system for individual performance.</div>
+    <div class="contrast-cell contrast-not">Another football boot brand with a new design language.</div>
+
+    <div class="contrast-cell contrast-is">Biomechanical research you can wear.</div>
+    <div class="contrast-cell contrast-not">Technology as a marketing narrative.</div>
+
+    <div class="contrast-cell contrast-is">A tool for longer careers and fewer injuries.</div>
+    <div class="contrast-cell contrast-not">A lifestyle product for sneaker collectors.</div>
+
+    <div class="contrast-cell contrast-is">Made to measure. One boot per athlete.</div>
+    <div class="contrast-cell contrast-not">Customization. Pick colors and print names.</div>
+
+    <div class="contrast-cell contrast-is">Material as design. The knitting structure is the surface.</div>
+    <div class="contrast-cell contrast-not">Design on material. Graphics printed on shoes.</div>
+
+    <div class="contrast-cell contrast-is" style="border-bottom: none;">Built from the athlete's body outward.</div>
+    <div class="contrast-cell contrast-not" style="border-bottom: none;">Adapted from a standard last inward.</div>
+  </div>
+</section>
+
+<!-- 07 VISUAL DIRECTION -->
+<section class="section-dark" style="padding-top: 120px; padding-bottom: 120px;">
+  <div class="inner">
+    <div class="section-label">06 &mdash; Visual Direction</div>
+    <p class="big-statement" style="margin-top: 0; margin-bottom: 40px;">Four poles that define how Alveon looks.</p>
+
+    <div class="pole">
+      <div class="pole-header">
+        <span class="pole-letter">A</span>
+        <span class="pole-name" style="color: var(--white);">The Bold System</span>
+      </div>
+      <p class="pole-body" style="color: rgba(255,255,255,0.55);">Condensed, architectural typography as the backbone of the brand. Typography is not decoration. Typography is identity. Bold, heavy, systematic.</p>
+    </div>
+
+    <div class="pole">
+      <div class="pole-header">
+        <span class="pole-letter">B</span>
+        <span class="pole-name" style="color: var(--white);">The Blueprint</span>
+      </div>
+      <p class="pole-body" style="color: rgba(255,255,255,0.55);">Technical drawings, dimension lines, annotations, and scan data as visual language. The aesthetic of a construction document. Not retro. Not nostalgic. Precise.</p>
+    </div>
+
+    <div class="pole">
+      <div class="pole-header">
+        <span class="pole-letter">C</span>
+        <span class="pole-name" style="color: var(--white);">The Signal</span>
+      </div>
+      <p class="pole-body" style="color: rgba(255,255,255,0.55);">Orange is the only accent color in a monochrome system. It marks the point where Alveon happens: the moment of measurement, the site of production, the zone of highest stress. Orange is territorial. Everything else is black, white, grey.</p>
+    </div>
+
+    <div class="pole" style="border-bottom: none;">
+      <div class="pole-header">
+        <span class="pole-letter">D</span>
+        <span class="pole-name" style="color: var(--white);">The Craft</span>
+      </div>
+      <p class="pole-body" style="color: rgba(255,255,255,0.55);">The beauty of the product lies in its technical truth. Knitting patterns, 3D-print structures, and scan geometries are the visual material. Technology made visible, not decorative.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 08 BRAND VOICE -->
+<section>
+  <div class="section-label">07 &mdash; Brand Voice</div>
+  <p class="big-statement" style="margin-top: 0;">Short sentences. Clear claims. No superlatives.</p>
+
+  <p class="manifesto">Alveon does not explain what is good. Alveon shows what is.</p>
+
+  <p class="manifesto">The language is technical but never inaccessible. Precise but never cold. Confident but never arrogant. We talk the way an engineer talks to an athlete: with respect for the problem and clarity about the solution.</p>
+
+  <p class="manifesto">We do not use exclamation marks. We do not use superlatives. We do not make promises we cannot prove with data.</p>
+
+  <div class="voice-comparison">
+    <p class="voice-other">If Nike says Just Do It.</p>
+    <p class="voice-other">If adidas says Impossible Is Nothing.</p>
+    <p class="voice-alveon-label">Alveon says:</p>
+    <p class="voice-alveon">Here is the data. Here is your boot.</p>
+  </div>
+</section>
+
+<!-- 09 CLOSING MANIFESTO -->
+<section class="section-black" style="padding-top: 160px; padding-bottom: 160px;">
+  <div class="inner">
+    <p class="closing-belief">We believe every athlete deserves better than average.</p>
+    <p class="closing-belief">We believe the best boot is not the lightest, the flashiest, or the most expensive. The best boot is the one that fits.</p>
+    <p class="closing-belief">We believe science should serve the player, not the press release.</p>
+    <p class="closing-belief">We believe in longer careers, fewer injuries, and the confidence that comes from knowing your equipment was made for your body and nobody else's.</p>
+
+    <p class="closing-bold">We scan. We measure. We construct.</p>
+    <p class="closing-bold">One athlete at a time.</p>
+
+    <div class="closing-wordmark">ALVEON</div>
+    <div class="closing-tagline">Engineered for One.</div>
+
+    <div class="closing-footer">
+      ALVEON GmbH &nbsp;&middot;&nbsp; Hamburg &nbsp;&middot;&nbsp; alveon.com
+      <em>This is a living document. It evolves as we do.</em>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
